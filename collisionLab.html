@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Collision Lab</title>
+	<meta charset=utf-8 />
+		<style>
+			html {
+				height: 100%;
+				}
+			body {
+				height: 100%;
+                background: #FFF;
+                color: #000;
+				}
+            #imageview {
+                position:absolute;
+                top:15px;
+                right:200px;
+                width:230px;
+                height:50px;
+            }
+        #entry {
+            position:absolute;
+            top:15px;
+            right:0px;
+            width:200px;
+            height:180px;
+            border:1px solid black;
+        }
+        #shapesInput {
+            position:absolute;
+            top:195px;
+            right:0px;
+            width:200px;
+            height:calc(100% - 195px);
+            border:1px solid black;
+            overflow:scroll;
+        }
+        .notWide {
+            width:30px;
+            text-align:center;
+        }
+        .skinny {
+            width:20px;
+            text-align:center;
+        }
+        #graphics {
+            overflow:hidden;
+            position:relative;
+            width:calc(100% - 200px);
+            height:calc(100% - 200px);
+            border:1px solid black;
+        }
+		</style>
+
+	<title></title>
+
+        
+</head>
+<body onload="Start();"> <!-- This funcion must be defined in your code! -->
+	<h2>Collision Lab</h2>
+    <!--<a href="keplerInstructions.html" target="_blank">Instructions</a>
+    <br />-->
+    
+    Elapsed Time:<span id='time'></span> s
+    <br />
+    Total Momentum:<span id='momentum'>(0, 0)</span> Ns
+    <br />
+    Total Angular Momentum:<span id="angular momentum">0</span> Nms
+    <br />
+    Total Kinetic Energy:<span id="kinetic energy">0</span> J
+    <br />
+    <input type="button" value="Save" onclick="save();" id="save" />
+    <input type="file" id="fileinput"/>
+    <br />
+    <input type="button" value=" Start " onclick="play();" id="start" />
+    <input type="button" value="Reset" onclick="resetButton();" id="reset" /><br />
+        
+    <div id="imageview" style="border:1px solid black">
+        
+        Hold to zoom:
+        <input type="button" value="-" onmouseup="stopZoomOut();" onmouseout="stopZoomOut();" onmousedown="startZoomOut()" id="zoomOut" />
+        <input type="button" value="+" onmouseup="stopZoomIn();" onmouseout="stopZoomIn();" onmousedown="startZoomIn()" id="zoomIn" />
+            <br />
+        Hold to move: <input type="button" value="<" onmouseup="stopMoveLeft();" onmouseout="stopMoveLeft();" onmousedown="startMoveLeft()" />
+        <input type="button" value=">" onmouseup="stopMoveRight();" onmouseout="stopMoveRight();" onmousedown="startMoveRight()" />
+        <input type="button" value="^" onmouseup="stopMoveUp();" onmouseout="stopMoveUp();" onmousedown="startMoveUp()" />
+        <input type="button" value="v" onmouseup="stopMoveDown();" onmouseout="stopMoveDown();" onmousedown="startMoveDown()" /><br />
+    </div>
+    
+    <div id="entry">
+        Input Shape<br />
+        <input id="circ" value="circ" type="radio" name="shape" onclick="changeShape();" checked/> Circle<br />
+        <input id="poly" value="poly" type="radio" name="shape" onclick="changeShape();" /> Polygon<br />
+        Elasticity: <input type="text" id="elasticity" value="1" class="notWide" /><br />
+        Mass: <input type="text" id="mass" value="1" class="notWide" /> kg<br />
+        <span id="r-text">Radius</span>: <input id="size" type="text" value="1" class="notWide" /> <span id="r-unit">m</span><br />
+        <!--if you think of more colors, just make more options. If the pen colors are valid, the new color will automatically work-->
+        <select id="color">
+            <option>black</option>
+            <option>red</option>
+            <option>orange</option>
+            <option>yellow</option>
+            <option>brown</option>
+            <option>green</option>
+            <option>cyan</option>
+            <option>turquoise</option>
+            <option>blue</option>
+            <option>indigo</option>
+            <option>purple</option>
+            <option>violet</option>
+            <option>magenta</option>
+            <option>pink</option>
+            <option>gray</option>
+        </select>
+        <select id="polygontype" hidden></select>
+            
+        </span>
+        <br />
+        <input type="button" value="Add Shape" onclick="addShape();" />
+        
+    </div>
+    
+    <div id="shapesInput">
+        
+    </div>
+    
+    <div id="graphics"></div>
+    <br />To comment on this lab or file a bug report, contact <a href="mailto:leedanilek@hanovernorwichschools.org">Lee Danilek</a>
+</body>
+<script type="text/javascript" src="FileSaver.js"></script>
+		<script type="text/javascript" src="jsDraw2DX.js"></script>
+        <script type="text/javascript" src="collisionLabModel.js"></script>
+		<script type="text/javascript" src="collisionLab.js"></script>
+</html>

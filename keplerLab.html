@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8 />
+		<style>
+			html {
+				height: 100%;
+				}
+			body {
+				height: 100%;
+                background: #FFF;
+                color: #000;
+				}
+			#canvas {
+				background: #000;
+                /*position: fixed;*/
+				width: calc(100% - 270px);/*700px;*/
+				height: calc(100% - 250px);/*500px;*/
+                overflow:hidden;
+                
+			}
+            #imageview {
+                position:absolute;
+                top:15px;
+                right:285px;
+                width:220px;
+                height:180px;
+            }
+        #dataview {
+            top:0px;
+            position:fixed;
+            /*
+             do not scroll
+             */
+            right:0px;
+            overflow:auto;
+            height:100%;
+            width:270px;
+        }
+        #datatable {
+            top:0px;
+            /*position:fixed;*/
+            /*
+             do not scroll
+             */
+            right:0px;
+            /*height:100%;*/
+            width:270px;
+        }
+        .dataRow {
+            /*height:10%;*/
+            /*height:10%;
+            height:50px;*/
+        }
+        /*#velocitytable {
+            top:20px;
+            position:absolute;
+            right:0px;
+            width:100px;
+        }
+        #positiontable {
+            top:20px;
+            position:absolute;
+            right:100px;
+            width:100px;
+        }
+        #timetable {
+            top:20px;
+            position:absolute;
+            right:200px;
+            width:70px;
+        }*/
+        @media print
+        {
+            .noPrint
+            {
+                display: none !important;
+            }
+            #canvas {
+                width:100%;
+                /*height:90%;*/
+            }
+            html {
+                height:90%;
+            }
+        }
+		</style>
+
+	<title>Planetary Motion and Kepler's Laws</title>
+
+
+</head>
+<body onload="Start();"> <!-- This funcion must be defined in your code! -->
+	<h2 class="noPrint">Planetary Motion and Kepler's Laws</h2>
+    <a class="noPrint" href="keplerInstructions.html" target="_blank">Instructions</a><br />
+    <div class="noPrint">
+    G=6.672 Nm<sup>2</sup>/kg<sup>2</sup><br />
+    F = <input type="text" id="equation" value="" placeholder="Universal Gravitation" /> (Masses m and M, distance r)<br/>
+    Sun's Mass = 10000 kg;
+    Planet's Mass: <input type="text" id="planetmass" value="100" /> kg </br>
+    Planet's Velocity: (<input type="text" id="vx" value="" placeholder="Vx" />, <input type="text" id="vy" value="" placeholder="Vy" />) m/s <br />
+    Planet's Coords: (<input type="text" id="x" value="100" placeholder="x" />,
+    <input type="text" id="y" value="0" placeholder="y" />) m <br />
+    Anchor Sun: <input type="checkbox" id="anchorsun" /><br />
+    
+    <input type="button" value=" Start " onclick="play();" id="start" />
+    <input type="button" value="Reset" onclick="resetOrbit();" id="reset" />
+    <input type="button" value="Draw Ellipse" onclick="displayEllipse();" id="drawEllipse" disabled/>
+        
+    <div id="imageview" style="border:1px solid black">
+        <b><center>Controller</b></center>
+        Click on image for coordinates<br />
+        (x, y): <span id="coordinates">(0.000, 0.000)</span> m<br />
+        (Vx, Vy): <span id="velocity"><align="right">(0.000, 0.000)</align></span> m/s<br />
+        time: <span id="time">0.000</span> s<br />
+        
+        <br />
+        Frames/Image: <span id="copydrop">3</span>
+        <input type="button" value="-" onclick="fewerFrames();" id="fewerFrames" />
+        <input type="button" value="+" onclick="moreFrames();"/>
+        <br/>
+        
+        Hold to zoom:
+        <input type="button" value="-" onmouseup="stopZoomOut();" onmouseout="stopZoomOut();" onmousedown="startZoomOut()" id="zoomOut" />
+        <input type="button" value="+" onmouseup="stopZoomIn();" onmouseout="stopZoomIn();" onmousedown="startZoomIn()" id="zoomIn" />
+            <br />
+        Hold to move: <input type="button" value="<" onmouseup="stopMoveLeft();" onmouseout="stopMoveLeft();" onmousedown="startMoveLeft()" />
+        <input type="button" value=">" onmouseup="stopMoveRight();" onmouseout="stopMoveRight();" onmousedown="startMoveRight()" />
+        <input type="button" value="^" onmouseup="stopMoveUp();" onmouseout="stopMoveUp();" onmousedown="startMoveUp()" />
+        <input type="button" value="v" onmouseup="stopMoveDown();" onmouseout="stopMoveDown();" onmousedown="startMoveDown()" /><br />
+    </div>
+    
+    <div id="dataview">
+        Data Table <input type="button" onclick="printDataTable();" value="Printable" />
+        <table border="1" id="datatable">
+            <tr class="dataRow">
+                <td>Time (s)</td>
+                <td>Position (m)</td>
+                <td>Velocity (m/s)</td>
+            </tr>
+        </table>
+    </div>
+    <!--<input type="button" onclick="printGraphics();" value="Printable" />-->
+    </div><!--end no print div-->
+    
+    <div id="canvas" style="border:1px solid white"></div>
+    <div class="noPrint">To comment on this lab or file a bug report, contact <a href="mailto:leedanilek@hanovernorwichschools.org">Lee Danilek</a></div>
+</body>
+		<script type="text/javascript" 	src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+        <script type="text/javascript" src="three.min.js"></script>
+    
+    <script type="text/javascript" src="three.js"></script>
+    
+    <script type="text/javascript" src="equation.js"></script>
+    <script type="text/javascript" src="helvetiker_regular.typeface.js"></script>
+		<script type="text/javascript" src="OrbitControls.js"></script>	
+		<script type="text/javascript" src="THREEx.KeyboardState.js"></script>
+		<script type="text/javascript" src="THREEx.WindowResize.js"></script>
+		<script type="text/javascript" src="keplerLab.js"></script>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Spring Lab</title>
+        <meta charset=utf-8 />
+        <style>
+            #graphics {
+                border: 1px solid black;
+            }
+        #graphs {
+            border: 1px solid black;
+        }
+        .r {
+            color: red;
+        }
+        </style>
+    </head>
+    <body onload="Draw();">
+        Parts in slinky: <input type="text" id="N" value="5" /> <br />
+        Slinky mass: <input type="text" id="M" value="1" /> <br />
+        Slinky spring constant k: <input type="text" id="K" value="1" /> <br />
+        <!--Dampen before drop:<input type="checkbox" id="dBefore" checked /><br />
+        Dampen after drop:<input type="checkbox" id="dAfter" /><br />-->
+        Internal Collisions Elastic:<input type="checkbox" id="elastic" /><br />
+        <input type="button" value="Drop" onclick="drop(this);" id="drop" />
+        <input type="button" value="Restart" onclick="restart();" /><br />
+        ∆t: <input type="range" min="1" max="100" value="50" id="dt" /><br />
+        <canvas width="1000px" height="500px" id="graphics"></canvas>
+        <!--<canvas width="600px" height="500px" id="graphs"></canvas>-->
+        <br />
+        Center of Mass Regression: <span id="regression" class="r"></span><br />
+        Top Regression: <span id="regressionT" class="r"></span><br />
+        Bottom Regression: <span id="regressionB" class="r"></span>
+    </body>
+    <script type="text/javascript" src="springLab.js"></script>
+</html>

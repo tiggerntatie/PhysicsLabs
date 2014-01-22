@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8 />
+		<style>
+			html {
+				height: 100%;
+				}
+			body {
+				height: 100%;
+				}
+			#canvas {
+				background: #FFF;
+				width: 1200px;
+				height: 500px;
+			}
+		</style>
+
+	<title></title>
+
+        
+</head>
+<body onload="Start();"> <!-- This funcion must be defined in your code! -->
+	<h2>Newton's 2nd Law LAB</h2>
+    <a href="newtonInstructions.html" target="_blank">Instructions</a>
+    <form id="equationform">
+    Enter equations in terms of hanging mass m, system mass M, acceleration due to gravity g, friction force Ffr, and net force Fnet.
+        <br />
+    F<sub>net</sub>=<input type="text" id="F=">
+        <br />
+    a<sub>net</sub>=<input type="text" id="a=">
+    </form>
+	<form id="massform">
+	Weight's Mass: <input type="text" id="mass" value="0.05"> kg<br />
+    Cart's Mass: <input type="text" id="cartmass" value="1.3"> kg
+	</form>
+    <form id="frictionform">
+    Friction Force X: <input type="text" id="friction" value="0"> N
+    </form>
+    <input type="button" value=" Start " onclick="play();" id="start">
+        <input type="button" value="Reset" onclick="reset();" id="reset"<br />
+    
+    <div id="canvas" style="border:1px solid black"></div>
+    
+    <br />To comment on this lab or file a bug report, contact <a href="mailto:leedanilek@hanovernorwichschools.org">Lee Danilek</a>
+</body>
+		<script type="text/javascript" 	src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+        <script type="text/javascript" src="three.min.js"></script>
+    
+    <script type="text/javascript" src="three.js"></script>
+    
+    <script type="text/javascript" scr="equation.js"></script>
+    <script type="text/javascript" src="helvetiker_regular.typeface.js"></script>
+    <script type="text/javascript" src="THREEx.WindowResize.js"></script>
+		<script type="text/javascript" src="OrbitControls.js"></script>	
+		<script type="text/javascript" src="THREEx.KeyboardState.js"></script>
+		<script type="text/javascript" src="newtonLab.js"></script>
+</html>

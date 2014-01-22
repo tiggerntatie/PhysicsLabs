@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8 />
+		<style>
+			html {
+				height: 100%;
+				}
+			body {
+				height: 100%;
+                background: #FFF;
+                color: #000;
+				}
+			#canvas {
+				background: #fff;
+                /*position: fixed;*/
+				width: calc(100% - 270px);/*700px;*/
+				height: calc(100% - 262px);/*500px;*/
+                overflow:hidden;
+                border:1px solid black;
+			}
+            #imageview {
+                position:absolute;
+                top:15px;
+                right:285px;
+                width:220px;
+                height:200px;
+            }
+        #dataview {
+            top:0px;
+            position:fixed;
+            /*
+             do not scroll
+             */
+            right:0px;
+            overflow:auto;
+            height:100%;
+            width:270px;
+        }
+        #velocitytable {
+            top:20px;
+            position:absolute;
+            right:0px;
+            width:100px;
+        }
+        #positiontable {
+            top:20px;
+            position:absolute;
+            right:100px;
+            width:100px;
+        }
+        #timetable {
+            top:20px;
+            position:absolute;
+            right:200px;
+            width:70px;
+        }
+		</style>
+
+	<title></title>
+
+        
+</head>
+<body onload="Start();"> <!-- This funcion must be defined in your code! -->
+	<h2>Projectile Lab</h2>
+    <!--<a href="keplerInstructions.html" target="_blank">Instructions</a>
+    <br />-->
+    Equations<br />
+    x = <input type="text" id="fx" value="" placeholder="f(t)" /> v<sub>x</sub> = <input type="text" id="fvx" value="" placeholder="f'(t)" />
+    <br />
+    y = <input type="text" id="fy" value="" placeholder="g(t)" /> v<sub>y</sub> = <input type="text" id="fvy" value = "" placeholder="g'(t)"/>
+    <br />
+    Initial Values<br />
+    (a<sub>x</sub>, a<sub>y</sub>) = (<input type="text" id="ax" value="" placeholder="ax" />, <input type="text" id="ay" value="" placeholder="ay" />) <sup>m</sup>/<sub>s<sup>2</sup></sub><br /><!--0, 9.81-->
+    (v<sub>0<sub>x</sub></sub>, v<sub>0<sub>y</sub></sub>) = (<input type="text" id="v0x" value="" placeholder="v0x" />, <input type="text" id="v0y" value="" placeholder="v0y" />) <sup>m</sup>/<sub>s</sub><br /><!--15, 18-->
+    (x<sub>0</sub>, y<sub>0</sub>) = (<input type="text" id="x0" value="0" placeholder="x" />, <input type="text" id="y0" value="0" placeholder="y" />) m
+    <br/>
+    Mass = <input type="text" id="mass" value="10" /> kg
+    <br />
+    <input type="button" value=" Start " onclick="play();" id="start" />
+    <input type="button" value="Reset" onclick="resetFreefall();" id="reset" /><br />
+        
+    <div id="imageview" style="border:1px solid black">
+        Click on image for coordinates<br />
+        <br />
+        (x, y): <span id="coordinates">(0.000, 0.000)</span> m<br />
+        (Vx, Vy): <span id="velocity"><align="right">(0.000, 0.000)</align></span> m/s<br />
+        time: <span id="time">0.000</span> s<br />
+        
+        <br />
+        Frames/Image: <span id="copydrop">3</span>
+        <input type="button" value="-" onclick="fewerFrames();" id="fewerFrames" />
+        <input type="button" value="+" onclick="moreFrames();"/>
+        <br/>
+        
+        Hold to zoom:
+        <input type="button" value="-" onmouseup="stopZoomOut();" onmouseout="stopZoomOut();" onmousedown="startZoomOut()" id="zoomOut" />
+        <input type="button" value="+" onmouseup="stopZoomIn();" onmouseout="stopZoomIn();" onmousedown="startZoomIn()" id="zoomIn" />
+            <br />
+        Hold to move: <input type="button" value="<" onmouseup="stopMoveLeft();" onmouseout="stopMoveLeft();" onmousedown="startMoveLeft()" />
+        <input type="button" value=">" onmouseup="stopMoveRight();" onmouseout="stopMoveRight();" onmousedown="startMoveRight()" />
+        <input type="button" value="^" onmouseup="stopMoveUp();" onmouseout="stopMoveUp();" onmousedown="startMoveUp()" />
+        <input type="button" value="v" onmouseup="stopMoveDown();" onmouseout="stopMoveDown();" onmousedown="startMoveDown()" /><br />
+        Isolate X:<input type="checkbox" id="isolatex" onmouseup="isolateX();" />
+        Isolate Y:<input type="checkbox" id="isolatey" onmouseup="isolateY();" />
+    </div>
+    
+    <div id="dataview" style="border:1px solid black">
+        <b><center>Data</center></b>
+        <div id="velocitytable">
+            Velocity (m/s)
+        </div>
+        <div id="positiontable">
+            Position (m)
+        </div>
+        <div id="timetable">
+            Time (s)
+        </div>
+    </div>
+    
+    <div id="canvas"></div>
+    <br />To comment on this lab or file a bug report, contact <a href="mailto:leedanilek@hanovernorwichschools.org">Lee Danilek</a>
+</body>
+		<script type="text/javascript" 	src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+        <script type="text/javascript" src="three.min.js"></script>
+    
+    <script type="text/javascript" src="three.js"></script>
+    
+    <script type="text/javascript" src="equation.js"></script>
+    <script type="text/javascript" src="helvetiker_regular.typeface.js"></script>
+		<script type="text/javascript" src="OrbitControls.js"></script>	
+		<script type="text/javascript" src="THREEx.KeyboardState.js"></script>
+		<script type="text/javascript" src="THREEx.WindowResize.js"></script>
+		<script type="text/javascript" src="projectileLab.js"></script>
+</html>
