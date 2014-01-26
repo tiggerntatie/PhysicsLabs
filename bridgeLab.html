@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Spring Lab</title>
+        <meta charset=utf-8 />
+        <style>
+            #graphics {
+                border: 1px solid black;
+            }
+        #graphs {
+            border: 1px solid black;
+        }
+        </style>
+    </head>
+    <body onload="start();">
+        Parts in slinky: <input type="text" id="N" value="5" /> <br />
+        Slinky mass: <input type="text" id="M" value="1" /> <br />
+        Slinky spring constant k: <input type="text" id="K" value="1" /> <br />
+        <!--Dampen before drop:<input type="checkbox" id="dBefore" checked /><br />
+        Dampen after drop:<input type="checkbox" id="dAfter" /><br />-->
+        Internal Collisions Elastic:<input type="checkbox" id="elastic" /><br />
+        <input type="button" value="Drop" onclick="drop(this);" id="drop" />
+        <input type="button" value="Restart" onclick="restart();" /><br />
+        ∆t: <input type="range" min="1" max="100" value="50" id="dt" /><br />
+        <canvas width="500px" height="500px" id="graphics"></canvas>
+        <br />
+    </body>
+    <script type="text/javascript" src="bridgeLab.js"></script>
+</html>
