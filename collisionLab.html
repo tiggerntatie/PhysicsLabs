@@ -13,6 +13,7 @@
                 color: #000;
 				}
             #imageview {
+                /*display: none !important;*/
                 position:absolute;
                 top:15px;
                 right:200px;
@@ -51,6 +52,21 @@
             height:calc(100% - 200px);
             border:1px solid black;
         }
+        @media print {
+            .noPrint {
+                display: none !important;
+            }
+            #graphics {
+                height:90%;
+            }
+            #shapesInput {
+                top:0px;
+                height:90%;
+            }
+            body {
+                height:95%;
+            }
+        }
 		</style>
 
 	<title></title>
@@ -58,25 +74,22 @@
         
 </head>
 <body onload="Start();"> <!-- This funcion must be defined in your code! -->
-	<h2>Collision Lab</h2>
+	<h2 class="noPrint">Collision Lab</h2>
     <!--<a href="keplerInstructions.html" target="_blank">Instructions</a>
     <br />-->
     
-    Elapsed Time:<span id='time'></span> s
+    <p class='noPrint'>Elapsed Time:<span id='time'></span> s
+    <br />Total Momentum:<span id='momentum' class='noPrint'>(0, 0)</span> Ns
+    <br />Total Angular Momentum:<span id="angular momentum" class='noPrint'>0</span> Nms
+    <br />Tranlational Kinetic Energy:<span id='translational energy'>0</span> J
+    <br />Total Kinetic Energy:<span id="kinetic energy" class='noPrint'>0</span> J</p>
+    <input type="button" value="Save" onclick="save();" id="save" class='noPrint' />
+    <input type="file" id="fileinput" class='noPrint'/>
     <br />
-    Total Momentum:<span id='momentum'>(0, 0)</span> Ns
-    <br />
-    Total Angular Momentum:<span id="angular momentum">0</span> Nms
-    <br />
-    Total Kinetic Energy:<span id="kinetic energy">0</span> J
-    <br />
-    <input type="button" value="Save" onclick="save();" id="save" />
-    <input type="file" id="fileinput"/>
-    <br />
-    <input type="button" value=" Start " onclick="play();" id="start" />
-    <input type="button" value="Reset" onclick="resetButton();" id="reset" /><br />
+    <input type="button" value=" Start " onclick="play();" id="start" class='noPrint' />
+    <input type="button" value="Reset" onclick="resetButton();" id="reset" class="noPrint" /><br />
         
-    <div id="imageview" style="border:1px solid black">
+    <div id="imageview" style="border:1px solid black" class="noPrint">
         
         Hold to zoom:
         <input type="button" value="-" onmouseup="stopZoomOut();" onmouseout="stopZoomOut();" onmousedown="startZoomOut()" id="zoomOut" />
@@ -88,7 +101,7 @@
         <input type="button" value="v" onmouseup="stopMoveDown();" onmouseout="stopMoveDown();" onmousedown="startMoveDown()" /><br />
     </div>
     
-    <div id="entry">
+    <div id="entry" class="noPrint">
         Input Shape<br />
         <input id="circ" value="circ" type="radio" name="shape" onclick="changeShape();" checked/> Circle<br />
         <input id="poly" value="poly" type="radio" name="shape" onclick="changeShape();" /> Polygon<br />
@@ -125,8 +138,8 @@
         
     </div>
     
-    <div id="graphics"></div>
-    <br />To comment on this lab or file a bug report, contact <a href="mailto:leedanilek@hanovernorwichschools.org">Lee Danilek</a>
+    <div id="graphics" onmousedown="mouseDownOnGraphics(event, this);" onmouseup="mouseUpOnGraphics(event, this);" onmousemove="mouseMoveOnGraphics(event, this);" onmousewheel="scroll(event, this);" onmouseover="mouseover(event, this);" onmouseout="mouseout(event, this);"></div>
+    <p class="noPrint">To comment on this lab or file a bug report, contact <a href="mailto:leedanilek@hanovernorwichschools.org">Lee Danilek</a></p>
 </body>
 <script type="text/javascript" src="FileSaver.js"></script>
 		<script type="text/javascript" src="jsDraw2DX.js"></script>

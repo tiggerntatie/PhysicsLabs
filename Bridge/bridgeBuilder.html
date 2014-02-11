@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bridge Builder</title>
+        <meta charset=utf-8 />
+        <style>
+            #graphics {
+                border: 1px solid black;
+            }
+        #graphs {
+            border: 1px solid black;
+        }
+        </style>
+    </head>
+    <body onload="start();">
+        Elastic Modulus: <input type="text" id="elasticModulus" value="10067" /> MPa<br />
+        Density: <input type="text" id="density" value="400" /> kg/m<sup>3</sup><br />
+        Beam Width: <input type="text" id="width" value=".002" /> m<br />
+        Length: <input type="text" id="length" value="0.30" /> m<br />
+        Weight: <input type="text" id="weight" value="10" /> N<br />
+        <input type="button" id="play" value="Play" onclick="startSimulation();" />
+        <input type="button" id="pause" value="Pause" onclick="pause();" />
+        <input type="button" id="reset" value="Reset" onclick="reset();" /><br />
+        <canvas width="500px" height="200px" id="graphics" onmouseup="mouseUp(event,this);" onmousedown="mouseDown(event,this);" onmousemove="mouseMoved(event,this);" onmouseover="mouseOver();" onmouseout="mouseOut();" onmousewheel="mouseWheel(event, this);"></canvas>
+        <br />
+    </body>
+    <script type="text/javascript" src="bridgeBuilder.js"></script>
+</html>

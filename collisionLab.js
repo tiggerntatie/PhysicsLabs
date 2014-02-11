@@ -64,10 +64,66 @@ function stopMoveRight() {
     movingRight=false;
 }
 
+var mouseIsDown = false;
+var coordMoving = [0, 0];
+
+function pointForTouch(event, obj) {
+    return [(event.pageX-obj.offsetLeft-xOffset)/xScale,-(event.pageY-obj.offsetTop-yOffset)/yScale];
+}
+
+function mouseDownOnGraphics(event, obj) {
+    mouseIsDown=true;
+    coordMoving = pointForTouch(event, obj);
+}
+
+function mouseUpOnGraphics(event, obj) {
+    mouseIsDown=false;
+}
+
+var ZOOM_FACTOR = .001;
+function scroll(event, obj) {
+    //wheeldelta is something like -3 or 3. -3 is down
+    var factor = ZOOM_FACTOR*Math.abs(event.wheelDelta)+1;
+    var panFactor = ZOOM_FACTOR;
+    if (event.wheelDelta<0) {
+        factor = 1./factor;
+        panFactor=1./panFactor;
+    }
+    zoom(factor, panFactor, event.pageX-obj.offsetLeft,event.pageY-obj.offsetTop);
+    gridChange();
+    for (i in shapes) {
+        shapes[i].draw();
+    }
+}
+
+function mouseover(event, obj) {
+    document.body.style.overflow="hidden";
+}
+
+function mouseout(event, obj) {
+    document.body.style.overflow="auto";
+}
+
+function mouseMoveOnGraphics(event, obj) {
+    if (mouseIsDown) {
+        coordOnTopNow = pointForTouch(event, obj);
+        xOffset+=(coordOnTopNow[0]-coordMoving[0])*xScale;
+        yOffset-=(coordOnTopNow[1]-coordMoving[1])*yScale;
+        gridChange();
+        //reset all graphics with new position
+        for (i in shapes) {
+            shapes[i].draw();
+        }
+    }
+}
+
 //zoom by a certain amount. Change the pan factor by a different amount.
-function zoom(scale, panChangeFactor) {
-    var centerX = document.getElementById("graphics").clientWidth/2;
-    var centerY = document.getElementById("graphics").clientHeight/2;
+function zoom(scale, panChangeFactor, centerX, centerY) {
+    if (!centerY && !centerX) {
+        var centerX = document.getElementById("graphics").clientWidth/2;
+        var centerY = document.getElementById("graphics").clientHeight/2;
+    }
+    
     yScale*=scale;
     xScale*=scale;
     var differenceX = xOffset-centerX;
@@ -100,6 +156,9 @@ function gridChange() {
     resetGrid(calculatedIncrementX(), calculatedIncrementY());
 }
 
+var POSITION_SIGFIGS = 4;
+var VELOCITY_SIGFIGS = 4;
+
 //main draw function. repeats forever.
 var elapsedTime=0;
 function draw() {
@@ -115,10 +174,10 @@ function draw() {
         //for all shapes, display new information in table.
         for (shapei in shapes) {
             var shape = shapes[shapei];
-            document.getElementById("px"+shapei).innerHTML=coordNumberOutput(shape.center.x, 2);
-            document.getElementById("py"+shapei).innerHTML=coordNumberOutput(shape.center.y, 2);
-            document.getElementById("Vx"+shapei).innerHTML=coordNumberOutput(shape.v.x, 2);
-            document.getElementById("Vy"+shapei).innerHTML=coordNumberOutput(shape.v.y, 2);
+            document.getElementById("px"+shapei).innerHTML=coordNumberOutput(shape.center.x, POSITION_SIGFIGS);
+            document.getElementById("py"+shapei).innerHTML=coordNumberOutput(shape.center.y, POSITION_SIGFIGS);
+            document.getElementById("Vx"+shapei).innerHTML=coordNumberOutput(shape.v.x, VELOCITY_SIGFIGS);
+            document.getElementById("Vy"+shapei).innerHTML=coordNumberOutput(shape.v.y, VELOCITY_SIGFIGS);
             if (document.getElementById("aV"+shapei)) {
                 //since these are in degrees and degrees/s, they won't be really big and tiny values won't matter
                 document.getElementById("aV"+shapei).innerHTML=(shape.angularV*180./Math.PI).toFixed(1);
@@ -165,6 +224,7 @@ function draw() {
     document.getElementById("momentum").innerHTML=momentum();
     document.getElementById("angular momentum").innerHTML=angularMomentum();
     document.getElementById("kinetic energy").innerHTML=kineticEnergy();
+    document.getElementById('translational energy').innerHTML=translationalEnergy();
     document.getElementById("time").innerHTML=elapsedTime.toFixed(1);
     
     //repeat

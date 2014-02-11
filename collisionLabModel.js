@@ -38,6 +38,11 @@ function Point(x,y) {
         this.x+=vec.x;
         this.y+=vec.y;
     }
+    //copy so addVector doesn't change anything
+    this.copy = function() {
+        var pt = new Point(this.x, this.y);
+        return pt;
+    }
     //returns the angle from this to other points. Angle is in radians, counterclockwise from east
     this.angle = function(other) {
         return Math.atan2(other.y-this.y, other.x-this.x);
@@ -237,6 +242,11 @@ function Point(x,y) {
             return Math.abs(yAtMyX-this.y)<POINT_ERROR;
         }
     }
+    //for drawing on screen. returns jxPoint
+    this.drawnPoint = function() {
+        var pt = new jxPoint(this.x*xScale+xOffset, -this.y*yScale+yOffset);
+        return pt;
+    }
 }
 
 //this class is for a two-dimensional vector. It is useful for defining forces, velocities, accelerations, etc.
@@ -408,6 +418,8 @@ function CircularBody(x, y, radius, vx, vy, color, elasticity, mass) {
     this.m=mass
     this.e=elasticity;
     this.angularV=0;//no real reason for this. it doesn't do anything. avoids some undefined and NaN errors, though
+    this.centerPoints = [];
+    this.drawnCenterPoints = [];
     
     this.drawnCenter=new jxPoint(0,0);
     this.updateCenter = function() {
@@ -418,17 +430,24 @@ function CircularBody(x, y, radius, vx, vy, color, elasticity, mass) {
             this.circle.remove();
         }
         this.circle = new jxEllipse(this.drawnCenter, this.drawnRadius*2*xScale, this.drawnRadius*2*yScale, undefined, new jxBrush(this.color));
+        
+        for (i in this.drawnCenterPoints) {
+            this.drawnCenterPoints[i].x=this.centerPoints[i].x*xScale+xOffset;
+            this.drawnCenterPoints[i].y=-this.centerPoints[i].y*yScale+yOffset;
+        }
     }
     this.updateCenter();
     this.drawnRadius=this.r;
     
     this.circle = new jxEllipse(this.drawnCenter, this.drawnRadius*2*xScale, this.drawnRadius*2*yScale, this.pen);
+    this.drawnCenterTracking = new jxPolyline(this.drawnCenterPoints, new jxPen(this.color, "2px"));
     
     //draw takes an argument x. if no argument is provided, the circle will be redrawn.
     this.draw = function(x) {
         this.updateCenter();
         if (!x) {
             this.circle.draw(canvas);
+            this.drawnCenterTracking.draw(canvas);
         }
     }
     this.draw(1);
@@ -446,6 +465,9 @@ function CircularBody(x, y, radius, vx, vy, color, elasticity, mass) {
     //move circle for a certain amount of time while interacting with other shapes.
     //timestep should be small
     this.move = function(timestep, others) {
+        //record center of mass
+        this.centerPoints.push(this.centerOfMass().copy());
+        this.drawnCenterPoints.push(this.centerOfMass().drawnPoint());
         //collide with all other objects
         //just for fun, calculate acceleration due to gravity. see if anyone notices.
         var acceleration = new Vector(0, 0);
@@ -469,6 +491,10 @@ function CircularBody(x, y, radius, vx, vy, color, elasticity, mass) {
         return Math.atan2(point.y-this.center.y, point.x-this.center.x);
     }
     
+    this.translationalEnergy=function() {
+        return this.m*this.v.mag()*this.v.mag()/2;
+    }
+    
     this.kineticEnergy = function() {
         return this.m*this.v.mag()*this.v.mag()/2;
     }
@@ -490,6 +516,8 @@ function CircularBody(x, y, radius, vx, vy, color, elasticity, mass) {
     //get rid of circle on screen
     this.clear=function() {
         this.circle.remove();
+        this.drawnCenterTracking.remove();
+        //this.drawnCenterPoints=[];
     }
 }
 
@@ -770,6 +798,9 @@ function PolygonalBody(points, vx, vy, angularV, color, elasticity, mass) {
     //center is just for output of coordinates. Not actually used for calculation.
     this.center=new Point(0, 0); // this will be changed soon after object creation.
     
+    this.centerPoints = [];//for keeping track of center of mass
+    this.drawnCenterPoints = [];//for tracking center of mass. update this every time from center points to allow for screen changes.
+    
     //graphics
     this.drawnPoints=[];
     for (i in points) {
@@ -780,17 +811,27 @@ function PolygonalBody(points, vx, vy, angularV, color, elasticity, mass) {
             this.drawnPoints[i].x=this.polygon.points[i].x*xScale+xOffset;
             this.drawnPoints[i].y=-this.polygon.points[i].y*yScale+yOffset;
         }
+        for (i in this.drawnCenterPoints) {
+            this.drawnCenterPoints[i].x=this.centerPoints[i].x*xScale+xOffset;
+            this.drawnCenterPoints[i].y=-this.centerPoints[i].y*yScale+yOffset;
+        }
     }
     this.updatePoints();
     
-    this.drawnPolygon = new jxPolygon(this.drawnPoints, undefined, new jxBrush(this.color));
+    var brush = new jxBrush(this.color);
+    this.drawnPolygon = new jxPolygon(this.drawnPoints, undefined, brush);
+    this.drawnCenterTracking = new jxPolyline(this.drawnCenterPoints, new jxPen(this.color, "2px"));
     
     this.draw = function(x) {
         this.updatePoints();
+        
+        
+        
         if (!x) {
             //this.clear();
             //this.drawnPolygon = new jxPolygon(this.drawnPoints, undefined, new jxBrush(this.color));//if color changes, this is the only way to reflect those changes
             this.drawnPolygon.draw(canvas);
+            this.drawnCenterTracking.draw(canvas);
         }
         
     }
@@ -809,6 +850,9 @@ function PolygonalBody(points, vx, vy, angularV, color, elasticity, mass) {
     
     //move for a given length of time while interacting with others.
     this.move = function(timestep, others) {
+        //store center
+        this.centerPoints.push(this.centerOfMass());
+        this.drawnCenterPoints.push(this.centerOfMass().drawnPoint());
         //now collide with all other objects
         //if timestep is small enough, it doesn't matter if this comes before or after motion
         //just for fun, calculate acceleration due to gravity. see if anyone notices. (masses of 1000000000000000 kg at 10 meters away work pretty well, kinda)
@@ -835,6 +879,10 @@ function PolygonalBody(points, vx, vy, angularV, color, elasticity, mass) {
     //pass along another function to the helpful polygon.
     this.normalAtPoint = function(point) {
         return this.polygon.normalAtPoint(point);
+    }
+    
+    this.translationalEnergy=function() {
+        return this.m*this.v.mag()*this.v.mag()/2;
     }
     
     //for checking purposes only
@@ -864,6 +912,8 @@ function PolygonalBody(points, vx, vy, angularV, color, elasticity, mass) {
     //get rid of polygon graphic
     this.clear = function() {
         this.drawnPolygon.remove();
+        this.drawnCenterTracking.remove();
+        //this.drawnCenterPoints=[];
     }
     
     //for checking, calculates angular momentum with reference to point
@@ -1082,9 +1132,9 @@ function ShapeInput(isCircle) {
         }
         var positionInput = "position<sub>0</sub>: (<input class=\"skinny\" type=\"text\" value=\""+this.x+"\" id=\"0x"+i+"\" onChange=\"editShape(this);\">, <input class=\"skinny\" type=\"text\" value=\""+this.y+"\" id=\"0y"+i+"\" onChange=\"editShape(this);\">) m";
         var velocityInput = "velocity<sub>0</sub>: (<input class=\"skinny\" type=\"text\" value=\""+this.vx+"\" id=\"vx"+i+"\" onChange=\"editShape(this);\">, <input class=\"skinny\" type=\"text\" value=\""+this.vy+"\" id=\"vy"+i+"\" onChange=\"editShape(this);\">) <sup>m</sup>/<sub>s</sub>";
-        var positionOutput = "position<sub>t</sub>: (<span id='px"+i+"'>"+this.x+"</span>, <span id='py"+i+"'>"+this.y+"</span>) m";
-        var velocityOutput = "velocity<sub>t</sub>: (<span id='Vx"+i+"'>"+this.vx+"</span>, <span id='Vy"+i+"'>"+this.vy+"</span>) <sup>m</sup>/<sub>s</sub>";
-        return this.color+" "+name+"; "+size+":"+this.size+unit+"; elasticity:"+this.elasticity+"; mass:"+this.mass+" kg;<br />"+positionInput+"<br />"+velocityInput+"<br />"+av+positionOutput+"<br />"+velocityOutput+"<br />"+avOutput;
+        var positionOutput = "position<sub>t</sub>: (<span id='px"+i+"'>"+coordNumberOutput(this.x, POSITION_SIGFIGS)+"</span>, <span id='py"+i+"'>"+coordNumberOutput(this.y, POSITION_SIGFIGS)+"</span>) m";
+        var velocityOutput = "velocity<sub>t</sub>: (<span id='Vx"+i+"'>"+coordNumberOutput(this.vx, VELOCITY_SIGFIGS)+"</span>, <span id='Vy"+i+"'>"+coordNumberOutput(this.vy, VELOCITY_SIGFIGS)+"</span>) <sup>m</sup>/<sub>s</sub>";
+        return this.color+" "+name+"; "+size+":"+this.size+unit+"; elasticity:"+this.elasticity+"; mass:"+this.mass.toPrecision(4)+" kg;<br />"+positionInput+"<br />"+velocityInput+"<br />"+av+positionOutput+"<br />"+velocityOutput+"<br />"+avOutput;
     }
     
     //encoded text for storage in txt file
@@ -1162,7 +1212,7 @@ function shapesInputString() {
 //helper function to get a nice readable output from a number that can go in something like a coordinate (0, 0). (4.4259398283, 3829284902) is bad because it's too long. (3.5e-16, 3.2) is bad because the x coordinate is misleading (it should be 0)
 function coordNumberOutput(number, sigFigs) {
     if (Math.abs(number)<1e-5) {
-        return "0";
+        return "0.000";
     }
     return number.toPrecision(sigFigs)
 }
@@ -1190,6 +1240,14 @@ function kineticEnergy() {
     var sum = 0;
     for (i in shapes) {
         sum+=shapes[i].kineticEnergy();
+    }
+    return coordNumberOutput(sum, 3);
+}
+
+function translationalEnergy() {
+    var sum = 0;
+    for (i in shapes) {
+        sum+=shapes[i].translationalEnergy();
     }
     return coordNumberOutput(sum, 3);
 }
