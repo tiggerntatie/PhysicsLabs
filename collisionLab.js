@@ -225,6 +225,7 @@ function draw() {
     document.getElementById("angular momentum").innerHTML=angularMomentum();
     document.getElementById("kinetic energy").innerHTML=kineticEnergy();
     document.getElementById('translational energy').innerHTML=translationalEnergy();
+    console.log(translationalEnergy);
     document.getElementById("time").innerHTML=elapsedTime.toFixed(1);
     
     //repeat

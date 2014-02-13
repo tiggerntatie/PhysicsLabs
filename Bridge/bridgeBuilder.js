@@ -159,8 +159,10 @@ function Node(x, y, fixedX, fixedY, weight) {
         //dampen, but only to 0. Otherwise can create an oscillation by counteracting the force too much
         var oldForceX = force.x;
         var oldForceY = force.y;
-        force.x-=dampingForce.x;
-        force.y-=dampingForce.y;
+        if (/*document.getElementById("damping").checked*/true) {
+            force.x-=dampingForce.x;
+            force.y-=dampingForce.y;
+        }
         //if dampening has changed force sign, set force to 0
         if (force.x>0 != oldForceX>0) {
             force.x=0;
