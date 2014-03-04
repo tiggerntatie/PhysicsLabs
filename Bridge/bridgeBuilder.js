@@ -1,9 +1,9 @@
 
 var GRAVITY = 9.81
 
-var dt = .005;//1.;
-var iterations = 2000.;//calculations per frame
-var calcs = 10;
+var dt = .03;//.005;//1.;
+var iterations = 2500.;//calculations per frame
+var tForEachCalculation = dt/iterations;
 
 var GRAPHICS_HEIGHT = document.getElementById("graphics").clientHeight;
 console.log(GRAPHICS_HEIGHT);
@@ -70,7 +70,9 @@ function Beam(node1, node2, density, elasticModulus, width) {
         return this.k*(this.length()-this.restLength);
     }*/
     
-    
+    this.calculateForce = function() {
+        this.storedForce = this.force();
+    }
     
     this.force = function() {
         var extension = this.length()-this.restLength;
@@ -140,6 +142,10 @@ function Node(x, y, fixedX, fixedY, weight) {
         return Math.sqrt(this.ax*this.ax+this.ay*this.ay);
     }
     
+    this.calculateNetForce = function() {
+        this.storedForce = this.netForce();
+    }
+    
     //each node has two or more tension forces
     //they must sum to 0 for the bridge to be in equilibrium
     //this function, therefore, will return zero when the node is in equilibrium
@@ -150,11 +156,11 @@ function Node(x, y, fixedX, fixedY, weight) {
         for (beamI in this.beams) {
             var beam = this.beams[beamI];
             //critical damping
-            var beamForce = beam.force();
-            var damping = beam.mass*Math.sqrt(beam.k/(beam.mass/2));
+            var beamForce = beam.storedForce;
+            var node = beam.otherNode(this);
+            var damping = node.mass*Math.sqrt(beam.k/(node.mass/2));
             dampingForce.x += this.vx*damping;
             dampingForce.y += this.vy*damping;
-            var node = beam.otherNode(this);
             var direction = this.directionToNode(node);
             force.x+=beamForce*Math.cos(direction);
             force.y+=beamForce*Math.sin(direction);
@@ -163,20 +169,23 @@ function Node(x, y, fixedX, fixedY, weight) {
         //dampen, but only to 0. Otherwise can create an oscillation by counteracting the force too much
         var oldForceX = force.x;
         var oldForceY = force.y;
-        if (/*document.getElementById("damping").checked*/true) {
-            force.x-=dampingForce.x;
-            force.y-=dampingForce.y;
-        }
+        
+        force.x-=dampingForce.x;
+        force.y-=dampingForce.y;
+        
         //if dampening has changed force sign, set force to 0
         if (force.x>0 != oldForceX>0) {
-            force.x=0;
+            force.x=oldForceX;
         }
         if (force.y>0 != oldForceY>0) {
-            force.y=0;
+            force.y=oldForceY;
         }
         
         force.y-=this.mass*GRAVITY;
-        force.y-=this.weight;
+        if (force.y>0) {
+            console.log("AAAAH");
+        }
+        //force.y-=this.weight;
         if (this.fixedX) force.x=0;
         if (this.fixedY) force.y=0;
         
@@ -206,13 +215,12 @@ function Node(x, y, fixedX, fixedY, weight) {
         this.ay=this.storedAy;
     }
     
+    //uses stored force
     this.moveForTime = function(timestep) {
-        var netForce = this.netForce();
+        var netForce = this.storedForce;
         
         this.ax = netForce.x/this.mass;
         this.ay = netForce.y/this.mass;
-        //if (badNum(this.ax)||badNum(this.ay)) {dt = .05; timestep=dt/iterations;}
-        //console.log(this.ax);
         this.x+=this.vx*timestep+this.ax*timestep*timestep/2.;
         this.y+=this.vy*timestep+this.ay*timestep*timestep/2.;
         this.vx+=timestep*this.ax;
@@ -236,8 +244,21 @@ function Bridge(nodes, beams) {
         return sum/this.nodes.length;
     }
     
+    for (beamI in this.beams) {
+        var beam = this.beams[beamI];
+        beam.calculateForce();
+    }
+    
     
     this.moveForTime = function(timestep) {
+        for (beamI in this.beams) {
+            var beam = this.beams[beamI];
+            beam.calculateForce();
+        }
+        for (nodeI in this.nodes) {
+            var node = this.nodes[nodeI];
+            node.calculateNetForce();
+        }
         for (nodeI in this.nodes) {
             var node = this.nodes[nodeI];
             node.moveForTime(timestep);
@@ -765,7 +786,6 @@ function resetBridge() {
         if (nodes[i].y==0 && nodes[i].x==0) {
             nodes[i].weight=weight;
             console.log(nodes[i]);
-            //nodes[i].mass+=weight/GRAVITY;
         }
     }
     var beams = [];
@@ -818,7 +838,7 @@ function Draw() {
         gContext.lineTo(p2[0], p2[1]);
         gContext.lineWidth=Math.min(bridge.beams[beamI].width*WIDTH_FACTOR,10);
         gContext.stroke();
-        gContext.fillText(bridge.beams[beamI].force().toFixed(0), (p1[0]+p2[0])/2., (p1[1]+p2[1])/2.);
+        gContext.fillText(bridge.beams[beamI].storedForce.toFixed(0), (p1[0]+p2[0])/2., (p1[1]+p2[1])/2.);
     }
     gContext.lineWidth=1;
     
@@ -847,7 +867,7 @@ function Draw() {
     if (!paused) {
         elapsedTime+=dt;
         for (var i=0; i<iterations; i++) {
-            bridge.moveForTime(dt/iterations);
+            bridge.moveForTime(tForEachCalculation);
         }
     }
     //console.log(bridge.averageNodeForce());
