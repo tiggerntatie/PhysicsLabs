@@ -2,7 +2,7 @@
 var GRAVITY = 9.81
 
 var dt = .03;//.005;//1.;
-var iterations = 2500.;//calculations per frame
+var iterations = 3000.;//calculations per frame
 var tForEachCalculation = dt/iterations;
 
 var GRAPHICS_HEIGHT = document.getElementById("graphics").clientHeight;
@@ -107,12 +107,17 @@ function Node(x, y, fixedX, fixedY, weight) {
         return this.velocity()>1e-3;
     }
     
-    if (weight) {
-        this.weight=weight;//weight of load, regardless of tension forces
-    } else {
-        this.weight=0;
+    this.setWeight = function(wt) {
+        this.weight=wt;
+        this.mass=this.weight/GRAVITY;
     }
-    this.mass = this.weight/GRAVITY;
+    this.mass = 0;
+    
+    if (weight) {
+        this.setWeight(weight);//weight of load, regardless of tension forces
+    } else {
+        this.setWeight(0);
+    }
     
     //does not deep copy beams. instead, sets them to []
     this.copy = function() {
@@ -159,8 +164,8 @@ function Node(x, y, fixedX, fixedY, weight) {
             var beamForce = beam.storedForce;
             var node = beam.otherNode(this);
             var damping = node.mass*Math.sqrt(beam.k/(node.mass/2));
-            dampingForce.x += this.vx*damping;
-            dampingForce.y += this.vy*damping;
+            dampingForce.x += (this.vx-node.vx)*damping;
+            dampingForce.y += (this.vy-node.vy)*damping;
             var direction = this.directionToNode(node);
             force.x+=beamForce*Math.cos(direction);
             force.y+=beamForce*Math.sin(direction);
@@ -182,6 +187,7 @@ function Node(x, y, fixedX, fixedY, weight) {
         }
         
         force.y-=this.mass*GRAVITY;
+        force.y-=this.weight;
         if (force.y>0) {
             console.log("AAAAH");
         }
@@ -601,16 +607,16 @@ function objectAtCoord(coordinate) {
         }
     }
     if (!obj) {
-        for (i in bridge.beams) {
-            var beam1 = new Point(bridge.beams[i].node1.x,bridge.beams[i].node1.y);
-            var beam2 = new Point(bridge.beams[i].node2.x,bridge.beams[i].node2.y);
-            var intersection = coordPt.intersectRadiusSegment(distToObj, beam1, beam2);
-            if (intersection && intersection.distance(coordPt)<distToObj) {
-                distToObj = intersection.distance(coordPt);
-                obj = bridge.beams[i];
-                pointOnObj = intersection;
-            }
+    for (i in bridge.beams) {
+        var beam1 = new Point(bridge.beams[i].node1.x,bridge.beams[i].node1.y);
+        var beam2 = new Point(bridge.beams[i].node2.x,bridge.beams[i].node2.y);
+        var intersection = coordPt.intersectRadiusSegment(distToObj, beam1, beam2);
+        if (intersection && intersection.distance(coordPt)<distToObj) {
+            distToObj = intersection.distance(coordPt);
+            obj = bridge.beams[i];
+            pointOnObj = intersection;
         }
+    }
     }
     if (!obj) {
         pointOnObj=coordPt;
