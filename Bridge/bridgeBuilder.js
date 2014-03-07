@@ -164,9 +164,14 @@ function Node(x, y, fixedX, fixedY, weight) {
             var beamForce = beam.storedForce;
             var node = beam.otherNode(this);
             var damping = node.mass*Math.sqrt(beam.k/(node.mass/2));
-            dampingForce.x += (this.vx-node.vx)*damping;
-            dampingForce.y += (this.vy-node.vy)*damping;
             var direction = this.directionToNode(node);
+            // use dot product of relative node velocity and strut direction
+            // to compute the rate at which the strut is elongating (EJD)
+            var strainrate = Math.cos(direction)*(this.vx-node.vx) + 
+                Math.sin(direction)*(this.vy-node.vy); 
+            // now compute the x/y components of the damping force (EJD)
+            dampingForce.x += damping*strainrate*Math.cos(direction);
+            dampingForce.y += damping*strainrate*Math.sin(direction);
             force.x+=beamForce*Math.cos(direction);
             force.y+=beamForce*Math.sin(direction);
         }
