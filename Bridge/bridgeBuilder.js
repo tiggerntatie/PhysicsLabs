@@ -1,8 +1,8 @@
 
 var GRAVITY = 9.81
 
-var dt = .03;//.005;//1.;
-var iterations = 3000.;//calculations per frame
+var dt = .0001;//.005;//1.;
+var iterations = 100.;//calculations per frame
 var tForEachCalculation = dt/iterations;
 
 var GRAPHICS_HEIGHT = document.getElementById("graphics").clientHeight;
@@ -163,7 +163,7 @@ function Node(x, y, fixedX, fixedY, weight) {
             //critical damping
             var beamForce = beam.storedForce;
             var node = beam.otherNode(this);
-            var damping = node.mass*Math.sqrt(beam.k/(node.mass/2));
+            var damping = 2.0*Math.sqrt(beam.k * (this.mass + this.weight/GRAVITY));
             var direction = this.directionToNode(node);
             // use dot product of relative node velocity and strut direction
             // to compute the rate at which the strut is elongating (EJD)
@@ -182,14 +182,6 @@ function Node(x, y, fixedX, fixedY, weight) {
         
         force.x-=dampingForce.x;
         force.y-=dampingForce.y;
-        
-        //if dampening has changed force sign, set force to 0
-        if (force.x>0 != oldForceX>0) {
-            force.x=oldForceX;
-        }
-        if (force.y>0 != oldForceY>0) {
-            force.y=oldForceY;
-        }
         
         force.y-=this.mass*GRAVITY;
         force.y-=this.weight;
@@ -230,8 +222,8 @@ function Node(x, y, fixedX, fixedY, weight) {
     this.moveForTime = function(timestep) {
         var netForce = this.storedForce;
         
-        this.ax = netForce.x/this.mass;
-        this.ay = netForce.y/this.mass;
+        this.ax = netForce.x/(this.mass + this.weight/GRAVITY);
+        this.ay = netForce.y/(this.mass + this.weight/GRAVITY);
         this.x+=this.vx*timestep+this.ax*timestep*timestep/2.;
         this.y+=this.vy*timestep+this.ay*timestep*timestep/2.;
         this.vx+=timestep*this.ax;
