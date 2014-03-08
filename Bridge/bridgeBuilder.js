@@ -160,12 +160,23 @@ function Node(x, y, fixedX, fixedY, weight) {
             //critical damping
             var beamForce = beam.storedForce;
             var node = beam.otherNode(this);
+<<<<<<< HEAD
             //damping coefficient = 2*sqrt(k*m)
             //m is this node's mass plus this node's mass due to weight
             var damping = 2.0*Math.sqrt(beam.k * (this.mass + this.weight/GRAVITY));
             dampingForce.x += (this.vx-node.vx)*damping;
             dampingForce.y += (this.vy-node.vy)*damping;
+=======
+            var damping = 2.0*Math.sqrt(beam.k * (this.mass + this.weight/GRAVITY));
+>>>>>>> FETCH_HEAD
             var direction = this.directionToNode(node);
+            // use dot product of relative node velocity and strut direction
+            // to compute the rate at which the strut is elongating (EJD)
+            var strainrate = Math.cos(direction)*(this.vx-node.vx) + 
+                Math.sin(direction)*(this.vy-node.vy); 
+            // now compute the x/y components of the damping force (EJD)
+            dampingForce.x += damping*strainrate*Math.cos(direction);
+            dampingForce.y += damping*strainrate*Math.sin(direction);
             force.x+=beamForce*Math.cos(direction);
             force.y+=beamForce*Math.sin(direction);
         }
@@ -176,14 +187,6 @@ function Node(x, y, fixedX, fixedY, weight) {
         
         force.x-=dampingForce.x;
         force.y-=dampingForce.y;
-        
-        //if dampening has changed force sign, set force to 0
-        if (force.x>0 != oldForceX>0) {
-            force.x=oldForceX;
-        }
-        if (force.y>0 != oldForceY>0) {
-            force.y=oldForceY;
-        }
         
         force.y-=this.mass*GRAVITY;
         force.y-=this.weight;
@@ -224,8 +227,8 @@ function Node(x, y, fixedX, fixedY, weight) {
     this.moveForTime = function(timestep) {
         var netForce = this.storedForce;
         
-        this.ax = netForce.x/this.mass;
-        this.ay = netForce.y/this.mass;
+        this.ax = netForce.x/(this.mass + this.weight/GRAVITY);
+        this.ay = netForce.y/(this.mass + this.weight/GRAVITY);
         this.x+=this.vx*timestep+this.ax*timestep*timestep/2.;
         this.y+=this.vy*timestep+this.ay*timestep*timestep/2.;
         this.vx+=timestep*this.ax;
