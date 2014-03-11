@@ -812,6 +812,22 @@ function pause() {
 
 var WIDTH_FACTOR = 1000;
 
+var nrg=function() {
+    var energy=0;
+    for (i in bridge.nodes) {
+        //mvv/2
+        energy+=bridge.nodes[i].velocity()*bridge.nodes[i].velocity()*bridge.nodes[i].mass/2.;
+        //mgh
+        energy+=bridge.nodes[i].mass*GRAVITY*bridge.nodes[i].y;
+    }
+    for (i in bridge.beams) {
+        //kxx/2
+        var x = bridge.beams[i].length()-bridge.beams[i].restLength;
+        energy+=bridge.beams[i].k*x*x/2.;
+    }
+    return energy;
+}
+
 function Draw() {
     gContext.clearRect(0, 0, GRAPHICS_WIDTH, GRAPHICS_HEIGHT);
     
@@ -824,6 +840,8 @@ function Draw() {
         gContext.lineTo(movingCoord[0]*slopeX+interceptX, movingCoord[1]*slopeY+interceptY);
         gContext.stroke();
     }
+    
+    document.getElementById("NRG").innerHTML=nrg().toPrecision(4);
     
     //draw beams
     gContext.lineWidth=1;
