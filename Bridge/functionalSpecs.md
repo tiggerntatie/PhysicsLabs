@@ -1,6 +1,9 @@
 #Functional Specs
 
-*
+* Drag to make beams between nodes
+* Click on beam or node to select
+    * Delete selected beam
+    * Delete selected node and its connecting beams
 
 ##Customer Specs
 
