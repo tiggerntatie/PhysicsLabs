@@ -2,5 +2,5 @@
 
 ##Customer Specs
 
-* *Move nodes*
+* **Move nodes**
 * Now
