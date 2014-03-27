@@ -3,4 +3,6 @@
 ##Customer Specs
 
 * **Move nodes**
-* Now
+* Snap to grid
+* Break beams
+* Custom thickness for each beam
