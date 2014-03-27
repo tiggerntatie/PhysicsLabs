@@ -2,4 +2,4 @@
 
 ##Customer Specs
 
-Now what?
+* Move nodes
