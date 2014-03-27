@@ -1,8 +1,10 @@
 #Functional Specs
 
+*
+
 ##Customer Specs
 
 * **Move nodes**
 * Snap to grid
-* Break beams
+* Break beams when Force > TensileStrength * Area
 * Custom thickness for each beam
