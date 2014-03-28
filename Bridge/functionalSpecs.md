@@ -2,7 +2,7 @@
 
 A bridge can be created and tested. A bridge consists of interconnected beams, which can be drawn and edited by the user on the canvas before being simulated, analyzed, and printed.
 
-###Bridge creating and editing
+###Bridge display
 * Nodes (beam connection points) are displayed as circles
     * Nodes are black when stationary
     * Nodes are red when moving with a velocity greater than a certain constant
@@ -13,16 +13,15 @@ A bridge can be created and tested. A bridge consists of interconnected beams, w
         * Positive forces indicate tension (pulling)
         * Negative forces indicate compression (pushing)
         * Forces are black if entire bridge is stationary; otherwise, they are red
+
+###Bridge creating and editing
 * Drag to make beams
     * Drag to/from node
     * Drag to/from beam: insert node in beam
 * Click on beam or node to select
-    * Delete selected beam
-    * Delete selected node and its connecting beams
+    * Delete selected beam with delete key
+    * Delete selected node and its connecting beams with delete key
     * Move selected node by dragging after selecting
-* Variable hanging weight (in Newtons) is simulated from center node
-* Left node is fixed in X and Y directions
-* Right node is fixed in Y direction
 
 ###Bridge simulating
 * Buttons Play, Pause, and Reset above the simulation canvas are for controlling state and the flow of time
@@ -32,6 +31,9 @@ A bridge can be created and tested. A bridge consists of interconnected beams, w
     * Stop simulation and revert to editing mode by pressing Reset button
 * Simulated bridge moves at a reasonable speed and reaches equilibrium quickly
 * When a beam's compression or tension limit is exceeded, it disconnects from one of its nodes
+* Variable hanging weight (in Newtons) is simulated from center node
+* Left node is fixed in X and Y directions
+* Right node is fixed in Y direction
     
 ###Bridge analyzing and printing
 * The Analysis button opens a new page with analysis
