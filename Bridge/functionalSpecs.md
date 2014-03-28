@@ -15,7 +15,7 @@ A bridge can be created and tested. A bridge consists of interconnected beams, w
         * Forces are black if entire bridge is stationary; otherwise, they are red
 * Drag to make beams
     * Drag to/from node
-    * Drag to/from beam: insert node
+    * Drag to/from beam: insert node in beam
 * Click on beam or node to select
     * Delete selected beam
     * Delete selected node and its connecting beams
@@ -30,16 +30,19 @@ A bridge can be created and tested. A bridge consists of interconnected beams, w
     * Pause/Resume simulation by pressing Pause button
     * While simulating or paused, no bridge parts can be manually created, moved, or deleted
     * Stop simulation and revert to editing mode by pressing Reset button
+* Simulated bridge moves at a reasonable speed and reaches equilibrium quickly
+* When a beam's compression or tension limit is exceeded, it disconnects from one of its nodes
     
 ###Bridge analyzing and printing
 * The Analysis button opens a new page with analysis
 * Each beam (identified with a numbered diagram) is listed with its width, length, mass, force, and strength
+* An efficiency value for the entire bridge is clearly displayed
 * The analysis page can be printed cleanly with Cmd-P.
 
 ##Customer Specs
 
 * **Move nodes**
-* Snap to grid
+* Snap *to* grid
 * Break beams when Tension Force > Tensile Strength * Cross Section Area
 * Break beams when Compression Force > Compression Strength * Cross Section Area
 * Custom thickness for each beam
