@@ -1,6 +1,6 @@
 #Functional Specs
 
-A bridge can be created and tested. A bridge consists of interconnected beams, which can be drawn and edited by the user on the canvas before being simulated, analyzed, and printed.
+**A bridge can be created and tested. A bridge consists of interconnected beams, which can be drawn and edited by the user on the canvas before being simulated, analyzed, and printed.**
 
 ###Bridge display
 * Nodes (beam connection points) are displayed as circles
@@ -13,6 +13,7 @@ A bridge can be created and tested. A bridge consists of interconnected beams, w
         * Positive forces indicate tension (pulling)
         * Negative forces indicate compression (pushing)
         * Forces are black if entire bridge is stationary; otherwise, they are red
+* Canvas is as big as possible for screen size
 
 ###Bridge creating and editing
 * Drag to make beams
@@ -22,6 +23,7 @@ A bridge can be created and tested. A bridge consists of interconnected beams, w
     * Delete selected beam with delete key
     * Delete selected node and its connecting beams with delete key
     * Move selected node by dragging after selecting
+* Nodes snap to visible grid
 
 ###Bridge simulating
 * Buttons Play, Pause, and Reset above the simulation canvas are for controlling state and the flow of time
