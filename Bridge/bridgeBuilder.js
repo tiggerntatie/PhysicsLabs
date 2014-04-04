@@ -24,8 +24,8 @@ var started= false;
 
 var bridgeBroke = false;
 
-var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*1000000;
-var tensileStrength = -1*parseFloat(document.getElementById("tensileStrength").value)*1000000;
+var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
+var tensileStrength = parseFloat(document.getElementById("tensileStrength").value)*1000000;
 
 //density = mass/volume
 function Beam(node1, node2, density, elasticModulus, width) {
@@ -98,7 +98,7 @@ function Beam(node1, node2, density, elasticModulus, width) {
     this.breakAtNode = function(connectedNode) {
         var force = this.storedForce;
         var area = this.area();
-        if (connectedNode.beams.length>1&&((force/area > compressionStrength) || (force/area < tensileStrength))) {
+        if (connectedNode.beams.length>1&&((force/area < compressionStrength) || (force/area > tensileStrength))) {
             newBeams = [];
             for (nodeBeamI in connectedNode.beams) {
                 if (connectedNode.beams[nodeBeamI]!=this) {
@@ -106,8 +106,10 @@ function Beam(node1, node2, density, elasticModulus, width) {
                 }
             }
             connectedNode.beams=newBeams;
+            connectedNode.fixedY=connectedNode.fixedX;
             if (connectedNode==this.node1) {this.node1 = this.node1.copy(); connectedNode=this.node1;}
             else {this.node2 = this.node2.copy(); connectedNode=this.node2;}
+            connectedNode.fixedY=false;
             bridge.nodes.push(connectedNode);
             connectedNode.beams.push(this);
             bridgeBroke=true;
@@ -796,7 +798,7 @@ function reset () {
         //lists of indices in userNodes (or a copy of user nodes)
         userBeams=[];
     }
-    compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*1000000;
+    compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
     tensileStrength = parseFloat(document.getElementById("tensileStrength").value)*1000000;
     bridgeBroke=false;
     paused=true;
