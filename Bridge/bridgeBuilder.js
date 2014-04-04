@@ -22,6 +22,11 @@ gContext.fillStyle = "black";
 var paused = true;
 var started= false;
 
+var bridgeBroke = false;
+
+var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*1000000;
+var tensileStrength = -1*parseFloat(document.getElementById("tensileStrength").value)*1000000;
+
 //density = mass/volume
 function Beam(node1, node2, density, elasticModulus, width) {
     this.node1 = node1;
@@ -88,6 +93,24 @@ function Beam(node1, node2, density, elasticModulus, width) {
     this.otherNode = function(node) {
         if (node==this.node1) return this.node2;
         return this.node1;
+    }
+    
+    this.breakIfBroken = function() {
+        var force = this.storedForce;
+        var area = this.area();
+        if (!bridgeBroke&&((force/area > compressionStrength) || (force/area < tensileStrength))) {
+            newBeams = [];
+            for (nodeBeamI in this.node1.beams) {
+                if (this.node1.beams[nodeBeamI]!=this) {
+                    newBeams.push(this.node1.beams[nodeBeamI]);
+                }
+            }
+            this.node1.beams=newBeams;
+            this.node1=this.node1.copy();
+            bridge.nodes.push(this.node1);
+            this.node1.beams.push(this);
+            bridgeBroke=true;
+        }
     }
 }
 
@@ -262,6 +285,10 @@ function Bridge(nodes, beams) {
         for (nodeI in this.nodes) {
             var node = this.nodes[nodeI];
             node.moveForTime(timestep);
+        }
+        for (beamI in this.beams) {
+            var beam = this.beams[beamI];
+            beam.breakIfBroken();
         }
     }
 }
@@ -763,7 +790,9 @@ function reset () {
         //lists of indices in userNodes (or a copy of user nodes)
         userBeams=[];
     }
-    
+    compressionStrength = parseFloat(document.getElementById("compressionStrength").value);
+    tensileStrength = parseFloat(-1*document.getElementById("tensileStrength").value);
+    bridgeBroke=false;
     paused=true;
     started=false;
     resetBridge();
@@ -807,6 +836,7 @@ var slopeX = -slopeY;
 resetBridge();
 
 function pause() {
+    
     paused=!paused;
 }
 
