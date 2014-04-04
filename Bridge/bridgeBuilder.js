@@ -848,7 +848,7 @@ var nrg=function() {
         //mvv/2
         energy+=bridge.nodes[i].velocity()*bridge.nodes[i].velocity()*bridge.nodes[i].mass/2.;
         //mgh
-        energy+=bridge.nodes[i].mass*GRAVITY*bridge.nodes[i].y;
+        energy+=(bridge.nodes[i].mass*GRAVITY+bridge.nodes[i].weight)*bridge.nodes[i].y;
     }
     for (i in bridge.beams) {
         //kxx/2
