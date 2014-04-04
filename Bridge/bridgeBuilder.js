@@ -95,22 +95,28 @@ function Beam(node1, node2, density, elasticModulus, width) {
         return this.node1;
     }
     
-    this.breakIfBroken = function() {
+    this.breakAtNode = function(connectedNode) {
         var force = this.storedForce;
         var area = this.area();
-        if (!bridgeBroke&&((force/area > compressionStrength) || (force/area < tensileStrength))) {
+        if (connectedNode.beams.length>1&&((force/area > compressionStrength) || (force/area < tensileStrength))) {
             newBeams = [];
-            for (nodeBeamI in this.node1.beams) {
-                if (this.node1.beams[nodeBeamI]!=this) {
-                    newBeams.push(this.node1.beams[nodeBeamI]);
+            for (nodeBeamI in connectedNode.beams) {
+                if (connectedNode.beams[nodeBeamI]!=this) {
+                    newBeams.push(connectedNode.beams[nodeBeamI]);
                 }
             }
-            this.node1.beams=newBeams;
-            this.node1=this.node1.copy();
-            bridge.nodes.push(this.node1);
-            this.node1.beams.push(this);
+            connectedNode.beams=newBeams;
+            if (connectedNode==this.node1) {this.node1 = this.node1.copy(); connectedNode=this.node1;}
+            else {this.node2 = this.node2.copy(); connectedNode=this.node2;}
+            bridge.nodes.push(connectedNode);
+            connectedNode.beams.push(this);
             bridgeBroke=true;
         }
+    }
+    
+    this.breakIfBroken = function() {
+        this.breakAtNode(this.node1);
+        this.breakAtNode(this.node2);
     }
 }
 
@@ -790,8 +796,8 @@ function reset () {
         //lists of indices in userNodes (or a copy of user nodes)
         userBeams=[];
     }
-    compressionStrength = parseFloat(document.getElementById("compressionStrength").value);
-    tensileStrength = parseFloat(-1*document.getElementById("tensileStrength").value);
+    compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*1000000;
+    tensileStrength = parseFloat(document.getElementById("tensileStrength").value)*1000000;
     bridgeBroke=false;
     paused=true;
     started=false;
