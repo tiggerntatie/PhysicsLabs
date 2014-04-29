@@ -14,11 +14,13 @@
         * Negative forces indicate compression (pushing)
         * Forces are black if entire bridge is stationary; otherwise, they are red
 * Canvas is as big as possible for screen size
+* Scroll to zoom in and out
 
 ###Bridge creating and editing
 * Drag to make beams
     * Drag to/from node
     * Drag to/from beam: insert node in beam
+    * Snapping radius to node and beam is proportional to zoom factor
 * Click on beam or node to select
     * Delete selected beam with delete key
     * Delete selected node and its connecting beams with delete key

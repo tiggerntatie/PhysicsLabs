@@ -8,14 +8,11 @@ var dt = .002;
 var iterations = 2000.;//calculations per frame
 var tForEachCalculation = dt/iterations;
 
-var GRAPHICS_HEIGHT = document.getElementById("graphics").clientHeight;
-console.log(GRAPHICS_HEIGHT);
-var GRAPHICS_WIDTH = document.getElementById("graphics").clientWidth;
-document.getElementById("graphics");
-
 var elapsedTime = 0.;
 
 var graphics = document.getElementById("graphics");
+graphics.width=window.innerWidth-30;
+graphics.height = window.innerHeight-250;
 var gContext = graphics.getContext("2d");
 gContext.fillStyle = "black";
 
@@ -306,8 +303,8 @@ function Bridge(nodes, beams) {
 //A_CUTOFF = 1000;
 var DELTA_X_CUTOFF = .01;
 
-function connectNodes(node1, node2) {
-    var beam = new Beam(node1, node2, parseFloat(document.getElementById("density").value), parseFloat(document.getElementById("elasticModulus").value)*1000000., parseFloat(document.getElementById("width").value));
+function connectNodes(node1, node2, beamWidth) {
+    var beam = new Beam(node1, node2, parseFloat(document.getElementById("density").value), parseFloat(document.getElementById("elasticModulus").value)*1000000., beamWidth);
     
     node1.beams.push(beam);
     node2.beams.push(beam);
@@ -347,8 +344,8 @@ function insertNodeIntoBeam(node, beam) {
         if (bridge.nodes[i]==node1) node1i=i;
         else if (bridge.nodes[i]==node2) node2i=i;
     }
-    userBeams.push([newNodeIndex, node1i]);
-    userBeams.push([newNodeIndex, node2i]);
+    userBeams.push([newNodeIndex, node1i, beam.width]);
+    userBeams.push([newNodeIndex, node2i, beam.width]);
 }
 
 function deleteBeam(beam) {
@@ -386,7 +383,13 @@ var userBeams=[];
 
 //returns coord of an event in model coordinates
 function coord(event, obj) {
-    return [(event.pageX-obj.offsetLeft-interceptX)/slopeX,(event.pageY-obj.offsetTop-interceptY)/slopeY];
+    var raw = [(event.pageX-obj.offsetLeft-interceptX)/slopeX,(event.pageY-obj.offsetTop-interceptY)/slopeY];
+    //if grid, round to grid.
+    if (gridOnScreen) {
+        raw[0]=Math.round(raw[0]/GRID_SIZE)*GRID_SIZE;
+        raw[1]=Math.round(raw[1]/GRID_SIZE)*GRID_SIZE;
+    }
+    return raw;
 }
 
 //this class represents a point in model coordinates. it responds to intersection methods. Copied from collision lab.
@@ -703,7 +706,7 @@ function endDragging() {
     for (i in userNodes) {
         if (userNodes[i]==startingNode) startNodeIndex=i;
     }
-    userBeams.push([startNodeIndex, endNodeIndex]);
+    userBeams.push([startNodeIndex, endNodeIndex, parseFloat(document.getElementById('width').value)]);
     
     resetBridge();
 }
@@ -817,7 +820,7 @@ function resetBridge() {
     
     var weight = parseFloat(document.getElementById("weight").value);
     
-    //find nodes on bottom
+    //find node on bottom. add weight to it.
     var bottomNodes = [];
     for (i in nodes) {
         if (nodes[i].y==0 && nodes[i].x==0) {
@@ -825,11 +828,14 @@ function resetBridge() {
             console.log(nodes[i]);
         }
     }
+    
+    //now make all beams between objects
     var beams = [];
     for (i in userBeams) {
         var leftI = userBeams[i][0];
         var rightI = userBeams[i][1];
-        var beam = connectNodes(nodes[leftI], nodes[rightI]);
+        var beamWidth = userBeams[i][2];
+        var beam = connectNodes(nodes[leftI], nodes[rightI], beamWidth);
         beams.push(beam);
     }
     bridge = new Bridge(nodes, beams);
@@ -837,9 +843,9 @@ function resetBridge() {
 
 //source for graphics: diveintohtml5.info/canvas.html
 
-var interceptY = GRAPHICS_HEIGHT/2;
+var interceptY = graphics.height/2;
 var slopeY = -500;
-var interceptX = GRAPHICS_WIDTH/2;
+var interceptX = graphics.width/2;
 var slopeX = -slopeY;
 resetBridge();
 
@@ -866,8 +872,29 @@ var nrg=function() {
     return energy;
 }
 
+var GRID_SIZE = .01;
+
 function Draw() {
-    gContext.clearRect(0, 0, GRAPHICS_WIDTH, GRAPHICS_HEIGHT);
+    gContext.clearRect(0, 0, graphics.width, graphics.height);
+    
+    if (gridOnScreen) {
+        var MIN_Y = 0;
+        var MAX_Y = bridgeLength/2.;
+        var MIN_X = -bridgeLength/2.;
+        var MAX_X = bridgeLength/2.;
+        gContext.lineWidth=.5;
+        gContext.strokeStyle="#EEEEEE";
+        gContext.beginPath();
+        for (x=MIN_X*slopeX+interceptX; x<MAX_X*slopeX+interceptX+.01; x+=GRID_SIZE*slopeX) {
+            gContext.moveTo(x, MIN_Y*slopeY+interceptY);
+            gContext.lineTo(x, MAX_Y*slopeY+interceptY);
+        }
+        for (y=MIN_Y*slopeY+interceptY; y>MAX_Y*slopeY+interceptY-.01; y+=GRID_SIZE*slopeY) {
+            gContext.moveTo(MIN_X*slopeX+interceptX, y);
+            gContext.lineTo(MAX_X*slopeX+interceptX, y);
+        }
+        gContext.stroke();
+    }
     
     //draw beam currently being drawn by user
     if (mouseIsDown) {
@@ -931,6 +958,21 @@ function Draw() {
     
     window.setTimeout("Draw();", 10);
 }
+
+var gridOnScreen=false;
+
+function gridClicked() {
+    gridOnScreen=!gridOnScreen;
+}
+
+window.onresize = function(event) {
+    graphics.width=window.innerWidth-30;
+    graphics.height = window.innerHeight-250;
+    interceptY = graphics.height/2;
+    slopeY = -500;
+    interceptX = graphics.width/2;
+    slopeX = -slopeY;
+};
 
 function start() {
     Draw();
