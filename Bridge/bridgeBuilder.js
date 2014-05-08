@@ -1,18 +1,21 @@
 
+//acceleration due to gravity in meters per second squared
 var GRAVITY = 9.81
 
-//dt is directly proportional to user satisfaction
-//iterations just makes it run right.
+//dt is directly proportional to user satisfaction. dt should be low to make the simulation more accurate
+//iterations just makes it run right. it has to be pretty low or the frame rate drops way low.
 //tForEachCalculation is inversely proportional to how well it runs.
 var dt = .002;
 var iterations = 2000.;//calculations per frame
 var tForEachCalculation = dt/iterations;
 
+//start at time=0. for debugging, maybe.
 var elapsedTime = 0.;
 
+//this is the canvas in the html
 var graphics = document.getElementById("graphics");
-graphics.width=window.innerWidth-30;
-graphics.height = window.innerHeight-250;
+//set the canvas size to fit to the screen
+resize();
 var gContext = graphics.getContext("2d");
 gContext.fillStyle = "black";
 
@@ -23,6 +26,13 @@ var bridgeBroke = false;
 
 var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
 var tensileStrength = parseFloat(document.getElementById("tensileStrength").value)*1000000;
+var bridgeLength = parseFloat(document.getElementById("length").value);//this can change.
+
+var addBeams = true;
+
+function changeMode(checkbox) {
+    addBeams = checkbox.checked;
+}
 
 //density = mass/volume
 function Beam(node1, node2, density, elasticModulus, width) {
@@ -313,22 +323,27 @@ function connectNodes(node1, node2, beamWidth) {
 
 function deleteNode(node) {
     var newUserNodes = [];
+    var deletedIndex;
     for (i in userNodes) {
         if (userNodes[i]!=node) newUserNodes.push(userNodes[i]);
         else {
             //delete beams that contain i. For every beam that has a coordinate >i, reduce it by 1
-            var newUserBeams = [];
-            for (beami in userBeams) {
-                usrBeam = userBeams[beami];
-                if (parseInt(usrBeam[0])!=i && parseInt(usrBeam[1])!=i) {
-                    if (usrBeam[0]>i) usrBeam[0]--;
-                    if (usrBeam[1]>i) usrBeam[1]--;
-                    newUserBeams.push(usrBeam);
-                }
-            }
-            userBeams=newUserBeams;
+            deletedIndex=parseInt(i);
+            console.log("delete index:"+deletedIndex);
         }
     }
+    var newUserBeams = [];
+    for (beami in userBeams) {
+        usrBeam = userBeams[beami];
+        if (usrBeam[0]!=deletedIndex && usrBeam[1]!=deletedIndex) {
+            var firstI = parseInt(usrBeam[0]);
+            var secondI = parseInt(usrBeam[1]);
+            if (firstI>deletedIndex) usrBeam[0]=firstI-1;
+            if (secondI>deletedIndex) usrBeam[1]=secondI-1;
+            newUserBeams.push(usrBeam);
+        }
+    }
+    userBeams=newUserBeams;
     userNodes=newUserNodes;
 }
 
@@ -373,7 +388,6 @@ function deleteBeam(beam) {
 
 var bridge;
 
-var bridgeLength = parseFloat(document.getElementById("length").value);
 //user-defined nodes (and possibly support nodes). car drives along y=0 nodes
 var userNodes=[new Node(-bridgeLength/2.,0,true,true,0), new Node(bridgeLength/2,0,false,true,0), new Node(0, 0, false, false, 0)];
 //when using this, make a deep copy
@@ -390,6 +404,9 @@ function coord(event, obj) {
         raw[1]=Math.round(raw[1]/GRID_SIZE)*GRID_SIZE;
     }
     return raw;
+}
+function screenCoord(event,obj) {
+    return [event.pageX-obj.offsetLeft,event.pageY-obj.offsetTop];
 }
 
 //this class represents a point in model coordinates. it responds to intersection methods. Copied from collision lab.
@@ -622,10 +639,10 @@ function Point(x,y) {
 //returns the object at a coord in model space. Object is either a Node or a Truss. Returns an array [object, coord on object]
 //if a node, returns the one in usernodes
 //if a truss, return the one in bridge.beams
-var MAX_CLICK_DIST = .03;
+var MAX_CLICK_DIST = 20.;//this is in pixels. divide by scaleX to get model coordinates
 function objectAtCoord(coordinate) {
     coordPt = new Point(coordinate[0], coordinate[1]);
-    var distToObj = MAX_CLICK_DIST;
+    var distToObj = MAX_CLICK_DIST/slopeX;//pixels / (pixels/meter) = meter
     var obj;
     var pointOnObj;
     //prefer to click on node
@@ -665,74 +682,94 @@ var mouseIsDown = false;
 var movingCoord;
 var movingObject;//object that the mouse is currently over
 
+var draggingStartCoord;
+
 function startDragging() {
     isDragging=true;
-    if (!selectedObject) {
-        startingNode=new Node(startingCoord[0],startingCoord[1]);
-        userNodes.push(startingNode);
-    } else if (selectedObject.type=="Beam") {
-        startingNode=new Node(startingCoord[0],startingCoord[1]);
-        insertNodeIntoBeam(startingNode, selectedObject);
-        resetBridge();
-    } else {
-        startingNode=selectedObject;
+    if (addBeams&&!started) {
+        if (!selectedObject) {
+            startingNode=new Node(startingCoord[0],startingCoord[1]);
+            userNodes.push(startingNode);
+        } else if (selectedObject.type=="Beam") {
+            startingNode=new Node(startingCoord[0],startingCoord[1]);
+            insertNodeIntoBeam(startingNode, selectedObject);
+            resetBridge();
+        } else {
+            startingNode=selectedObject;
+        }
     }
 }
 
 function endDragging() {
     isDragging=false;
-    var endNode;
-    var endNodeIndex = userNodes.length;
-    if (!movingObject || movingObject.type=="Beam") {
-        //create a new node for the endpoint
-        endNode = new Node(movingCoord[0], movingCoord[1]);
-    } else if (movingObject.type=="Node") {
-        endNode=movingObject;
-        for (i in userNodes) {
-            if (userNodes[i]==endNode) {
-                endNodeIndex=i;
+    if (addBeams&&!started) {
+        var endNode;
+        var endNodeIndex = userNodes.length;
+        if (!movingObject || movingObject.type=="Beam") {
+            //create a new node for the endpoint
+            endNode = new Node(movingCoord[0], movingCoord[1]);
+        } else if (movingObject.type=="Node") {
+            endNode=movingObject;
+            for (i in userNodes) {
+                if (userNodes[i]==endNode) {
+                    endNodeIndex=i;
+                }
             }
         }
+        
+        if (!movingObject) {
+            userNodes.push(endNode);
+        } else if (movingObject.type=="Beam") {
+            //insert the end node into the beam
+            insertNodeIntoBeam(endNode, movingObject);
+        }
+        
+        var startNodeIndex;
+        for (i in userNodes) {
+            if (userNodes[i]==startingNode) startNodeIndex=i;
+        }
+        userBeams.push([startNodeIndex, endNodeIndex, parseFloat(document.getElementById('width').value)]);
+        
+        resetBridge();
     }
-    
-    if (!movingObject) {
-        userNodes.push(endNode);
-    } else if (movingObject.type=="Beam") {
-        //insert the end node into the beam
-        insertNodeIntoBeam(endNode, movingObject);
-    }
-    
-    var startNodeIndex;
-    for (i in userNodes) {
-        if (userNodes[i]==startingNode) startNodeIndex=i;
-    }
-    userBeams.push([startNodeIndex, endNodeIndex, parseFloat(document.getElementById('width').value)]);
-    
-    resetBridge();
 }
 
 function mouseDown(event,obj) {
-    var objcoord = objectAtCoord(coord(event, obj));
-    startingCoord=objcoord[1];
-    selectedObject=objcoord[0];
-    console.log(selectedObject);
-    mouseIsDown=true;
-    console.log(startingCoord);
-    movingCoord=startingCoord;
+    if (addBeams&&!started) {
+        var objcoord = objectAtCoord(coord(event, obj));
+        startingCoord=objcoord[1];
+        selectedObject=objcoord[0];
+        console.log(selectedObject);
+        mouseIsDown=true;
+        console.log(startingCoord);
+        movingCoord=startingCoord;
+    } else {
+        mouseIsDown=true;
+        draggingStartCoord=screenCoord(event,obj);
+    }
 }
 
-var MIN_DRAG_DIST = .03;
+var MIN_DRAG_DIST = MAX_CLICK_DIST;//in pixels
 
 function mouseMoved(event,obj) {
     if (mouseIsDown) {
-        var objcoord = objectAtCoord(coord(event,obj));
-        movingCoord = objcoord[1];
-        movingObject=objcoord[0];
-        var mousePt = new Point(movingCoord[0], movingCoord[1]);
-        var startPt = new Point(startingCoord[0], startingCoord[1]);
-        if (!isDragging && mousePt.distance(startPt)>MIN_DRAG_DIST) {
-            startDragging();
-            selectedObject=undefined;
+        if (addBeams&&!started) {
+            var objcoord = objectAtCoord(coord(event,obj));
+            movingCoord = objcoord[1];
+            movingObject=objcoord[0];
+            var mousePt = new Point(movingCoord[0], movingCoord[1]);
+            var startPt = new Point(startingCoord[0], startingCoord[1]);
+            if (!isDragging && mousePt.distance(startPt)>MIN_DRAG_DIST/slopeX) {
+                startDragging();
+                selectedObject=undefined;
+            }
+        } else {
+            var newCoord = screenCoord(event,obj);
+            interceptX-=draggingStartCoord[0]-newCoord[0];
+            interceptY-=draggingStartCoord[1]-newCoord[1];
+            console.log(draggingStartCoord);
+            console.log(newCoord);
+            draggingStartCoord = newCoord;
         }
     }
 }
@@ -747,8 +784,8 @@ function mouseUp(event,obj) {
     }
 }
 
-function keyPress(event) {
-    if (event.keyCode==8 && selectedObject) {
+window.onkeydown = function(event) {
+    if ((event.keyCode==46||event.keyCode==68) && selectedObject) {
         //delete key
         if (selectedObject.type=="Beam") {
             deleteBeam(selectedObject);
@@ -757,11 +794,25 @@ function keyPress(event) {
             deleteNode(selectedObject);
             resetBridge();
         }
+        selectedObject=undefined;
     }
+    console.log("keydown:"+event.keyCode);
 }
 
-//bind delete key
-document.onkeypress=keyPress;
+document.onkeypress = function(event) {
+    if ((event.keyCode==8||event.keyCode==100) && selectedObject) {
+        //delete key
+        if (selectedObject.type=="Beam") {
+            deleteBeam(selectedObject);
+            resetBridge();
+        } else if (selectedObject.type=="Node") {
+            deleteNode(selectedObject);
+            resetBridge();
+        }
+        selectedObject=undefined;
+    }
+    console.log("keypress:"+event.keyCode);
+}
 
 //prevent scrolling when on top. scrolling is hijacked to zoom
 function mouseOver() {
@@ -778,9 +829,13 @@ function mouseWheel(event, obj) {
     if (down) {
         factor = 1./factor;
     }
+    var x = event.pageX-obj.offsetLeft;
+    var y = event.pageY-obj.offsetTop;
     console.log(factor);
     slopeY*=factor;
     slopeX*=factor;
+    interceptX = (interceptX-x)*factor+x;
+    interceptY = (interceptY-y)*factor+y;
 }
 
 function startSimulation () {
@@ -807,6 +862,8 @@ function reset () {
     paused=true;
     started=false;
     resetBridge();
+    //reset zoom
+    resetScale();
 }
 
 //Basswood has a compressive strength of 15,300 kPa
@@ -843,10 +900,18 @@ function resetBridge() {
 
 //source for graphics: diveintohtml5.info/canvas.html
 
-var interceptY = graphics.height/2;
-var slopeY = -500;
-var interceptX = graphics.width/2;
-var slopeX = -slopeY;
+var interceptY;
+var slopeY;
+var interceptX;
+var slopeX;
+function resetScale() {
+    interceptY = graphics.height*.9;
+    //.3 units should be about the height of the graphic
+    slopeX = graphics.width/(bridgeLength*1.1);//units * slope = pixels. length*1.1 * slope = width
+    interceptX = graphics.width/2;//centered on x
+    slopeY = -slopeX;//want everything to be proportional
+}
+resetScale();
 resetBridge();
 
 function pause() {
@@ -872,7 +937,7 @@ var nrg=function() {
     return energy;
 }
 
-var GRID_SIZE = .01;
+var GRID_SIZE = .005;
 
 function Draw() {
     gContext.clearRect(0, 0, graphics.width, graphics.height);
@@ -882,22 +947,32 @@ function Draw() {
         var MAX_Y = bridgeLength/2.;
         var MIN_X = -bridgeLength/2.;
         var MAX_X = bridgeLength/2.;
+        gContext.strokeStyle="#DDDDDD";
         gContext.lineWidth=.5;
-        gContext.strokeStyle="#EEEEEE";
-        gContext.beginPath();
+        var thick = true;
         for (x=MIN_X*slopeX+interceptX; x<MAX_X*slopeX+interceptX+.01; x+=GRID_SIZE*slopeX) {
+            gContext.beginPath();
             gContext.moveTo(x, MIN_Y*slopeY+interceptY);
             gContext.lineTo(x, MAX_Y*slopeY+interceptY);
+            if (thick) gContext.lineWidth=2;
+            else gContext.lineWidth=.5;
+            thick = !thick;
+            gContext.stroke();
         }
+        var thick = true;
         for (y=MIN_Y*slopeY+interceptY; y>MAX_Y*slopeY+interceptY-.01; y+=GRID_SIZE*slopeY) {
+            gContext.beginPath();
             gContext.moveTo(MIN_X*slopeX+interceptX, y);
             gContext.lineTo(MAX_X*slopeX+interceptX, y);
+            if (thick) gContext.lineWidth=2;
+            else gContext.lineWidth=.5;
+            thick = !thick;
+            gContext.stroke();
         }
-        gContext.stroke();
     }
     
     //draw beam currently being drawn by user
-    if (mouseIsDown) {
+    if (mouseIsDown&&addBeams&&!started) {
         gContext.beginPath();
         gContext.strokeStyle="gray";
         gContext.lineWidth=parseFloat(document.getElementById("width").value)*WIDTH_FACTOR;
@@ -961,17 +1036,18 @@ function Draw() {
 
 var gridOnScreen=false;
 
-function gridClicked() {
-    gridOnScreen=!gridOnScreen;
+function gridClicked(checkbox) {
+    gridOnScreen=checkbox.checked;
+}
+
+function resize() {
+    graphics.width=window.innerWidth-30;
+    graphics.height = window.innerHeight-230;
 }
 
 window.onresize = function(event) {
-    graphics.width=window.innerWidth-30;
-    graphics.height = window.innerHeight-250;
-    interceptY = graphics.height/2;
-    slopeY = -500;
-    interceptX = graphics.width/2;
-    slopeX = -slopeY;
+    resize();
+    resetScale();
 };
 
 function start() {

@@ -6,7 +6,6 @@
 * Nodes (beam connection points) are displayed as circles
     * Nodes are black when stationary
     * Nodes are red when moving with a velocity greater than a certain constant
-    * Nodes not created to be within a beam can only exist in integer coordinates on a grid of set size
 * Beams are displayed as gray lines connecting nodes
     * Beam width ( sqrt(cross section area) ) is represented proportionally by line width
     * Above each beam is a number expressing the force exerted by the beam
@@ -15,6 +14,7 @@
         * Forces are black if entire bridge is stationary; otherwise, they are red
 * Canvas is as big as possible for screen size
 * Scroll to zoom in and out
+* Uncheck "Add beams" checkbox to move by panning
 
 ###Bridge creating and editing
 * Drag to make beams
@@ -24,8 +24,10 @@
 * Click on beam or node to select
     * Delete selected beam with delete key
     * Delete selected node and its connecting beams with delete key
+    * Alternative to Delete key is "d" key, because Chrome has a stupid functionality for the delete key
     * Move selected node by dragging after selecting
 * Nodes snap to visible grid
+    * Grid is toggled with checkbox
 
 ###Bridge simulating
 * Buttons Play, Pause, and Reset above the simulation canvas are for controlling state and the flow of time
