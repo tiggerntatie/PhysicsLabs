@@ -1092,7 +1092,7 @@ function analyze() {
         insideTableHTML+= "<tr><td>"+beami+"</td><td>"+width+"</td><td>"+beam.length()+"</td><td>"+force+"</td><td>"+breakingPoint+"</td><td>"+efficiency+"</td></tr>";
     }
     var maxForce = weightOnBridge/maxEfficiency;
-    var html = "<html><head></head><body><table border='1'>"+insideTableHTML+"</table><p>Estimated maximum force:"+maxForce+"</p></body></html>";
+    var html = "<html><head></head><body><table border='1' cellpadding='0' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force:"+maxForce+"</p></body></html>";
     var newWindow = window.open("about:blank", "_new");
     newWindow.document.open();
     newWindow.document.write(html);
