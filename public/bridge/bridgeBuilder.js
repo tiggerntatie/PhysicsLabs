@@ -74,7 +74,6 @@ function Beam(node1, node2, density, elasticModulus, width) {
     
     var volume = this.area()*this.restLength;
     this.mass=volume*density;
-    console.log("mass:"+this.mass);
     node1.mass+=this.mass/2;
     node2.mass+=this.mass/2;
     
@@ -131,6 +130,8 @@ function Beam(node1, node2, density, elasticModulus, width) {
 
 var TIME_TO_FULL_WEIGHT = .3;//take some amount of (simulated) seconds to get up to full weight
 
+var SMALL_ACCEL = 1e-3;
+
 function Node(x, y, fixedX, fixedY, weight) {
     this.x=x;
     this.y=y;
@@ -147,7 +148,7 @@ function Node(x, y, fixedX, fixedY, weight) {
     this.type="Node";
     
     this.isMoving = function() {
-        return this.velocity()>1e-3;
+        return this.weight!=this.effectiveWeight || (this.storedForce && (Math.abs(this.storedForce.x)>SMALL_ACCEL || Math.abs(this.storedForce.y)>SMALL_ACCEL));
     }
     
     //mass is stored completely separately from weight. When using mass, though, make sure to add the weight/GRAVITY
@@ -964,6 +965,8 @@ var nrg=function() {
 
 var GRID_SIZE = .005;
 
+var MAX_LINE_WIDTH = 50;
+
 function Draw() {
     gContext.clearRect(0, 0, graphics.width, graphics.height);
     
@@ -1000,7 +1003,7 @@ function Draw() {
     if (mouseIsDown&&addBeams&&!started) {
         gContext.beginPath();
         gContext.strokeStyle="gray";
-        gContext.lineWidth=parseFloat(document.getElementById("width").value)*WIDTH_FACTOR;
+        gContext.lineWidth=Math.min(parseFloat(document.getElementById("width").value)*WIDTH_FACTOR,MAX_LINE_WIDTH);
         gContext.moveTo(startingCoord[0]*slopeX+interceptX, startingCoord[1]*slopeY+interceptY);
         gContext.lineTo(movingCoord[0]*slopeX+interceptX, movingCoord[1]*slopeY+interceptY);
         gContext.stroke();
@@ -1019,7 +1022,7 @@ function Draw() {
         var p2 = [interceptX+bridge.beams[beamI].node2.x*slopeX, interceptY+bridge.beams[beamI].node2.y*slopeY];
         gContext.moveTo(p1[0], p1[1]);
         gContext.lineTo(p2[0], p2[1]);
-        gContext.lineWidth=Math.min(bridge.beams[beamI].width*WIDTH_FACTOR,10);
+        gContext.lineWidth=Math.min(bridge.beams[beamI].width*WIDTH_FACTOR,MAX_LINE_WIDTH);
         gContext.stroke();
         gContext.fillText(bridge.beams[beamI].storedForce.toFixed(0), (p1[0]+p2[0])/2., (p1[1]+p2[1])/2.);
     }
@@ -1079,8 +1082,10 @@ window.onresize = function(event) {
 //called from button
 function analyze() {
     //create new webpage
-    var insideTableHTML = "<tr><td>Beam #</td><td>Width</td><td>Length</td><td>Force</td><td>Breaking Point</td><td>Efficiency</td></tr>";
+    //use non-breaking spaces to keep it all in one line
+    var insideTableHTML = "<tr><td>Beam&nbsp;#</td><td>Width&nbsp;(m)</td><td>Length&nbsp;(m)</td><td>Force&nbsp;(N)</td><td>Breaking&nbsp;Point&nbsp;(N)</td><td>Efficiency&nbsp;(N/N)</td></tr>";
     var maxEfficiency = 0;
+    var totalMass = 0;
     for (var beami in bridge.beams) {
         var beam = bridge.beams[beami];
         var force = beam.force();
@@ -1090,9 +1095,19 @@ function analyze() {
         var efficiency = force/breakingPoint;
         maxEfficiency = Math.max(efficiency, maxEfficiency);
         insideTableHTML+= "<tr><td>"+beami+"</td><td>"+width+"</td><td>"+beam.length()+"</td><td>"+force+"</td><td>"+breakingPoint+"</td><td>"+efficiency+"</td></tr>";
+        totalMass+=beam.mass;
     }
     var maxForce = weightOnBridge/maxEfficiency;
-    var html = "<html><head></head><body><table border='1' cellpadding='0' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force:"+maxForce+"</p></body></html>";
+    //if it can support more weight distributed over more area with less mass, it's more efficient
+    //multiply by bridgeLength?
+    var overallEfficiency = maxForce/totalMass;
+    var warning="";
+    if (maxEfficiency<=0) {
+        maxForce="unknown";
+        overallEfficiency="unknown";
+        warning="<p>Run Simulation and try again.</p>";
+    }
+    var html = "<html><head></head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" N/kg</p>"+warning+"</body></html>";
     var newWindow = window.open("about:blank", "_new");
     newWindow.document.open();
     newWindow.document.write(html);
