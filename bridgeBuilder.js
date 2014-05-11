@@ -129,6 +129,8 @@ function Beam(node1, node2, density, elasticModulus, width) {
     }
 }
 
+var TIME_TO_FULL_WEIGHT = .3;//take some amount of (simulated) seconds to get up to full weight
+
 function Node(x, y, fixedX, fixedY, weight) {
     this.x=x;
     this.y=y;
@@ -153,8 +155,21 @@ function Node(x, y, fixedX, fixedY, weight) {
     
     if (weight) {
         this.weight = weight;//weight of load, regardless of tension forces
-    } else {
+    } else {//if it's undefined, set it to 0
         this.weight = 0;
+    }
+    this.setWeight = function(newWeight) {
+        this.weight=newWeight;
+        this.deltaWeight = 1.*this.weight/TIME_TO_FULL_WEIGHT;
+    }
+    //don't put all the weight on at once.
+    this.effectiveWeight = 0;
+    this.increaseWeight = function(timestep) {
+        if (this.weight) {
+            this.effectiveWeight+=timestep*this.deltaWeight;
+            console.log("new weight:"+this.effectiveWeight);
+            if (this.effectiveWeight>this.weight) this.effectiveWeight=this.weight;
+        }
     }
     
     //does not deep copy beams. instead, sets them to []
@@ -202,7 +217,7 @@ function Node(x, y, fixedX, fixedY, weight) {
             var beamForce = beam.storedForce;
             var node = beam.otherNode(this);
             
-            var damping = 2.0*Math.sqrt(beam.k * (this.mass + this.weight/GRAVITY));
+            var damping = 2.0*Math.sqrt(beam.k * (this.mass + this.effectiveWeight/GRAVITY));
             var direction = this.directionToNode(node);
             // use dot product of relative node velocity and strut direction
             // to compute the rate at which the strut is elongating (EJD)
@@ -223,7 +238,7 @@ function Node(x, y, fixedX, fixedY, weight) {
         force.y-=dampingForce.y;
         
         force.y-=this.mass*GRAVITY;
-        force.y-=this.weight;
+        force.y-=this.effectiveWeight;
         if (this.fixedX) force.x=0;
         if (this.fixedY) force.y=0;
         
@@ -257,8 +272,8 @@ function Node(x, y, fixedX, fixedY, weight) {
     this.moveForTime = function(timestep) {
         var netForce = this.storedForce;
         
-        this.ax = netForce.x/(this.mass + this.weight/GRAVITY);
-        this.ay = netForce.y/(this.mass + this.weight/GRAVITY);
+        this.ax = netForce.x/(this.mass + this.effectiveWeight/GRAVITY);
+        this.ay = netForce.y/(this.mass + this.effectiveWeight/GRAVITY);
         this.x+=this.vx*timestep+this.ax*timestep*timestep/2.;
         this.y+=this.vy*timestep+this.ay*timestep*timestep/2.;
         this.vx+=timestep*this.ax;
@@ -304,6 +319,13 @@ function Bridge(nodes, beams) {
         for (beamI in this.beams) {
             var beam = this.beams[beamI];
             beam.breakIfBroken();
+        }
+    }
+    
+    this.increaseWeight = function(timestep) {
+        for (nodeI in this.nodes) {
+            var node = this.nodes[nodeI];
+            node.increaseWeight(timestep);
         }
     }
 }
@@ -416,6 +438,7 @@ var VERTICAL_CUTOFF=.01;
 var INTERSECTION_ERROR = 1e-5;
 
 //a point has an x and a y coordinate. It is mutable.
+//this code works reliably. collapse it when possible.
 function Point(x,y) {
     this.x=x;
     this.y=y;
@@ -869,6 +892,8 @@ function reset () {
 //Basswood has a compressive strength of 15,300 kPa
 //Modulus of Elasticity: 10,067 MPa
 
+var weightOnBridge = 0;//updated whenever weight is added to bridge
+
 function resetBridge() {
     var nodes=[];
     for (i in userNodes) {
@@ -878,10 +903,10 @@ function resetBridge() {
     var weight = parseFloat(document.getElementById("weight").value);
     
     //find node on bottom. add weight to it.
-    var bottomNodes = [];
     for (i in nodes) {
         if (nodes[i].y==0 && nodes[i].x==0) {
-            nodes[i].weight=weight;
+            nodes[i].setWeight(weight);
+            weightOnBridge=weight;
             console.log(nodes[i]);
         }
     }
@@ -1027,6 +1052,7 @@ function Draw() {
         for (var i=0; i<iterations; i++) {
             bridge.moveForTime(tForEachCalculation);
         }
+        bridge.increaseWeight(dt);
     }
     //console.log(bridge.averageNodeForce());
     //console.log(bridge.nodes[3].netForce());
@@ -1049,6 +1075,28 @@ window.onresize = function(event) {
     resize();
     resetScale();
 };
+
+//called from button
+function analyze() {
+    //create new webpage
+    var insideTableHTML = "<tr><td>Beam #</td><td>Width</td><td>Length</td><td>Force</td><td>Breaking Point</td><td>Efficiency</td></tr>";
+    var maxEfficiency = 0;
+    for (var beami in bridge.beams) {
+        var beam = bridge.beams[beami];
+        var force = beam.force();
+        var width = beam.width;
+        var breakingPoint = tensileStrength*width*width;
+        if (force<0) breakingPoint = compressionStrength*width*width;
+        var efficiency = force/breakingPoint;
+        maxEfficiency = Math.max(efficiency, maxEfficiency);
+        insideTableHTML+= "<tr><td>"+beami+"</td><td>"+width+"</td><td>"+beam.length()+"</td><td>"+force+"</td><td>"+breakingPoint+"</td><td>"+efficiency+"</td></tr>";
+    }
+    var maxForce = weightOnBridge/maxEfficiency;
+    var html = "<html><head></head><body><table border='1'>"+insideTableHTML+"</table><p>Estimated maximum force:"+maxForce+"</p></body></html>";
+    var newWindow = window.open("about:blank", "_new");
+    newWindow.document.open();
+    newWindow.document.write(html);
+}
 
 function start() {
     Draw();
