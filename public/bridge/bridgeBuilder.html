@@ -32,4 +32,59 @@
         <br />
     </body>
     <script type="text/javascript" src="bridgeBuilder.js"></script>
+    
+    <!--For copying into analysis page, insert inner html-->
+    <div hidden id="analysisGraphics">
+        <script>
+            //do not run anything here. just create functions that will not conflict with bridgeBuilder.js
+            //set variable document.bridgeBeams before page load. it is a list of [x1,y1,x2,y2] coordinates
+            //set variables document.minX, document.minY, document.maxX, document.maxY.
+            console.log("It's alive!");
+            //run on analysis page load
+            document.startAnalysis = function() {
+                var analysisCanvas = document.getElementById("analysisCanvas");
+                var aContext = analysisCanvas.getContext("2d");
+                aContext.clearRect(0,0,analysisCanvas.width,analysisCanvas.height);
+                aContext.fillStyle = "blue";
+                aContext.strokeStyle="black";
+                aContext.font = "bold 12px sans-serif";
+                aContext.lineWidth=2;
+                var bridgeBeams = document.bridgeBeams;
+                console.log(bridgeBeams);
+                aContext.beginPath();
+                var PADDING = .02;
+                var minX = document.minX-PADDING;
+                var minY = document.minY-PADDING;
+                var maxX = document.maxX+PADDING;
+                var maxY = document.maxY+PADDING;
+                //scales are the same
+                var x_scale = analysisCanvas.width/(maxX-minX);
+                var y_scale = analysisCanvas.height/(minY-maxY);
+                x_scale=Math.min(x_scale, -y_scale);
+                y_scale=-x_scale;
+                //linear map from x (minX to maxX) to c (0 to analysisWidth)
+                //f(minX)=0, f(maxX)=analysisWidth. f(x)=m*x+b. f(minX)=m*minX+b. b=-m*minX
+                //y is mapped differently. f(maxY)=0, f(minY)=analysisHeight.
+                var x_intercept=0-x_scale*minX;
+                var y_intercept=0-y_scale*maxY;
+                console.log("x with intercept:"+x_intercept+" and slope:"+x_scale);
+                for (beamI in bridgeBeams) {
+                    var aBeam = bridgeBeams[beamI];
+                    var x1 = aBeam[0]*x_scale+x_intercept;
+                    var x2 = aBeam[2]*x_scale+x_intercept;
+                    var y1 = aBeam[1]*y_scale+y_intercept;
+                    var y2 = aBeam[3]*y_scale+y_intercept;
+                    console.log("move to:"+x1+','+y1);
+                    aContext.moveTo(x1, y1);
+                    console.log('line to:'+x2+','+y2);
+                    aContext.lineTo(x2, y2);
+                    //calculate midpoint to draw text.
+                    var xMid = (x1+x2)/2.;
+                    var yMid = (y1+y2)/2.;
+                    aContext.fillText(beamI, xMid, yMid);
+                }
+                aContext.stroke();
+            }
+        </script>
+    </div>
 </html>

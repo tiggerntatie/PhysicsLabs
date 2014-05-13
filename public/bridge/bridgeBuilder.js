@@ -1083,7 +1083,7 @@ window.onresize = function(event) {
 function analyze() {
     //create new webpage
     //use non-breaking spaces to keep it all in one line
-    var insideTableHTML = "<tr><td>Beam&nbsp;#</td><td>Width&nbsp;(m)</td><td>Length&nbsp;(m)</td><td>Force&nbsp;(N)</td><td>Breaking&nbsp;Point&nbsp;(N)</td><td>Efficiency&nbsp;(N/N)</td></tr>";
+    var insideTableHTML = "<tr><td>Beam&nbsp;#</td><td>Width&nbsp;(m)</td><td>Length&nbsp;(m)</td><td>Force&nbsp;(N)</td><td>Breaking&nbsp;Point&nbsp;(N)</td><td>Capacity&nbsp;(N/N)</td></tr>";
     var maxEfficiency = 0;
     var totalMass = 0;
     for (var beami in bridge.beams) {
@@ -1107,10 +1107,34 @@ function analyze() {
         overallEfficiency="unknown";
         warning="<p>Run Simulation and try again.</p>";
     }
-    var html = "<html><head></head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" N/kg</p>"+warning+"</body></html>";
+    var analysisHTML = document.getElementById("analysisGraphics").innerHTML;
+    var html = "<html><head><title>Bridge Analysis</title>"+analysisHTML+"</head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" N/kg</p>"+warning+"<canvas id='analysisCanvas' width='600px' height='200px'></canvas></body></html>";
+    
     var newWindow = window.open("about:blank", "_new");
+    newWindow.document.bridgeBeams = [];
+    var maxY = -10000;
+    var maxX = -10000;
+    var minY = 10000;
+    var minX = 10000;
+    for (beamI in userBeams) {
+        var userBeam = userBeams[beamI];
+        var nodeIndex1 = userBeam[0];
+        var nodeIndex2 = userBeam[1];
+        var node1 = userNodes[nodeIndex1];
+        var node2 = userNodes[nodeIndex2];
+        maxY = Math.max(maxY, node1.y, node2.y);
+        minY = Math.min(minY, node1.y, node2.y);
+        maxX = Math.max(maxX, node1.x, node2.x);
+        minX = Math.min(minX, node1.x, node2.x);
+        newWindow.document.bridgeBeams.push([node1.x, node1.y, node2.x, node2.y]);
+    }
+    newWindow.document.minX = minX;
+    newWindow.document.minY = minY;
+    newWindow.document.maxX = maxX;
+    newWindow.document.maxY = maxY;
     newWindow.document.open();
     newWindow.document.write(html);
+    newWindow.document.startAnalysis();
 }
 
 function start() {
