@@ -213,7 +213,8 @@ function Beam(node1, node2, density, elasticModulus, width) {
         return this.width*this.width*this.width*this.width/6.;
     }
     
-    this.compressionStrength = function() {
+    //this is actually a maximum force, not strength
+    this.compressionMaxForce = function() {
         //calculate compression strength dynamically
         //var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
         //F = pi^2*Modulus Elasticity*Area Moment of Inertia/(K*Length)
@@ -225,7 +226,8 @@ function Beam(node1, node2, density, elasticModulus, width) {
         //console.log("strength:"+currentCompressionStrength+", numerator:"+numerator+", denominator:"+denominator);
         //should it be negative?
         //what units are these in? why is this number so low?
-        return -10000000*currentCompressionStrength;
+        //if fixed it, kinda, so instead of a factor of ten million there's a factor of one hundred
+        return -100*currentCompressionStrength;
     }
     
     this.breakAtNode = function(connectedNode) {
@@ -233,8 +235,8 @@ function Beam(node1, node2, density, elasticModulus, width) {
         var area = this.area();
         
         
-        if (connectedNode.beams.length>1&&((force/area < this.compressionStrength()) || (force/area > tensileStrength))) {
-            console.log("compression strength broken:"+this.compressionStrength());
+        if (connectedNode.beams.length>1&&((force < this.compressionMaxForce()) || (force/area > tensileStrength))) {
+            console.log("compression force broken:"+this.compressionMaxForce());
             newBeams = [];
             for (nodeBeamI in connectedNode.beams) {
                 if (connectedNode.beams[nodeBeamI]!=this) {
@@ -1227,7 +1229,7 @@ function analyze() {
         var force = beam.force();
         var width = beam.width;
         var breakingPoint = tensileStrength*width*width;
-        if (force<0) breakingPoint = beam.compressionStrength()*width*width;
+        if (force<0) breakingPoint = beam.compressionMaxForce();
         var efficiency = force/breakingPoint;
         maxEfficiency = Math.max(efficiency, maxEfficiency);
         insideTableHTML+= "<tr><td>"+beami+"</td><td>"+width+"</td><td>"+beam.length()+"</td><td>"+force+"</td><td>"+breakingPoint+"</td><td>"+efficiency+"</td></tr>";
