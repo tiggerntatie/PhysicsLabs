@@ -24,10 +24,18 @@
         <p hidden>Total NRG: <span id="NRG">0</span> J<br /></p>
         Grid: <input type="checkbox" id="grid" onclick="gridClicked(this);" /><br />
         Add beams: <input type="checkbox" onclick="changeMode(this);" checked /><br />
+        <select id="openSelect" onchange="openBridge(this);">
+            <option>Open Bridge</option>
+        </select>
+        <input type="text" onkeydown="if (event.keyCode == 13) storeBridge(this);" placeholder="Save Bridge As"/>
+        <br />
         <input type="button" id="play" value="Play" onclick="startSimulation();" />
+        
         <input type="button" id="pause" value="Pause" onclick="pause();" />
         <input type="button" id="reset" value="Reset" onclick="reset();" />
-        <input type="button" id="analyze" value="Analyze" onclick="analyze();" /><br />
+        <input type="button" id="analyze" value="Analyze" onclick="analyze();" />
+        
+        <br />
         <canvas height="300px" width="500px" id="graphics" onmouseup="mouseUp(event,this);" onmousedown="mouseDown(event,this);" onmousemove="mouseMoved(event,this);" onmouseover="mouseOver();" onmouseout="mouseOut();" onmousewheel="mouseWheel(event, this);"></canvas>
         <br />
     </body>

@@ -22,9 +22,113 @@ gContext.fillStyle = "black";
 var paused = true;
 var started= false;
 
+//from http://www.w3schools.com/js/js_cookies.asp
+function setCookie(cname,cvalue,exdays)
+{
+    var d = new Date();
+    d.setTime(d.getTime()+(exdays*24*60*60*1000));
+    var expires = "expires="+d.toGMTString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getCookie(cname)
+{
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++)
+    {
+        var c = ca[i].trim();
+        if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+    }
+    return "";
+}
+
+var storedBridgeTexts = getCookie("bridges").split("|");//this is not updated when bridges are saved. do not use this except immediately after this definition (don't let the cookie change before you use this var)
+var storedBridgeDict = {};//this IS updated when bridges are saved.
+for (bridgeI in storedBridgeTexts) {
+    storedBridgeDict[storedBridgeTexts[bridgeI].split("[")[0]]=storedBridgeTexts[bridgeI];
+}
+for (var bridgeName in storedBridgeDict) {
+    document.getElementById("openSelect").innerHTML+="<option>"+bridgeName+"</option>";
+}
+
+//returns a string made from storedBridgeDict
+function makeCookie() {
+    cookieParts = [];
+    for (bridgeName in storedBridgeDict) {
+        cookieParts.push(storedBridgeDict[bridgeName]);
+    }
+    cookieStr = "";
+    for (partI in cookieParts) {
+        cookieStr+=cookieParts[partI];
+        if (partI!=cookieParts.length-1) {
+            cookieStr+="|";
+        }
+    }
+    return cookieStr;
+}
+
+function openBridge(selector) {
+    if (storedBridgeDict[selector.value]) {
+        decode(storedBridgeDict[selector.value]);
+    }
+}
+
+//encodes the current usernodes and userbeams into a string, separated by semicolons
+function encoded() {
+    var nodesEncoded = "";//separate by colons. no colons before or after
+    for (nodeI in userNodes) {
+        var node = userNodes[nodeI];
+        nodesEncoded+=node.x+","+node.y+","+node.fixedX+","+node.fixedY;
+        if (nodeI != userNodes.length-1) {
+            nodesEncoded+=":";
+        }
+    }
+    var beamsEncoded = "";//separate by colons
+    for (beamI in userBeams) {
+        var beam = userBeams[beamI];
+        beamsEncoded+=beam[0]+","+beam[1]+","+beam[2];
+        if (beamI != userBeams.length-1) {
+            beamsEncoded+=":";
+        }
+    }
+    var encode = nodesEncoded+"["+beamsEncoded;
+    console.log(encode);
+    return encode;
+}
+
+//decodes a given string and changes usernodes and userbeams
+function decode(encrypted) {
+    var groups = encrypted.split("[");
+    if (groups.length==3) {
+        var encryptedBeams = groups[2].split(":");
+        var encryptedNodes = groups[1].split(":");
+        userBeams=[];
+        for (beamI in encryptedBeams) {
+            var beamParts = encryptedBeams[beamI].split(",");
+            userBeams.push([parseInt(beamParts[0]), parseInt(beamParts[1]), parseFloat(beamParts[2])]);
+        }
+        userNodes=[];
+        for (nodeI in encryptedNodes) {
+            var nodeParts = encryptedNodes[nodeI].split(",");
+            userNodes.push(new Node(parseFloat(nodeParts[0]), parseFloat(nodeParts[1]), nodeParts[2]=='true', nodeParts[3]=='true'));
+        }
+        resetBridge();
+    }
+}
+
+function storeBridge(textInput) {
+    var name = textInput.value;
+    var bridgeHash=name+"["+encoded();
+    if (!storedBridgeDict[name]) {
+        document.getElementById("openSelect").innerHTML+="<option>"+name+"</option>";
+    }
+    storedBridgeDict[name]=bridgeHash;
+    setCookie("bridges", makeCookie(), 30);
+}
+
 var bridgeBroke = false;
 
-var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
 var tensileStrength = parseFloat(document.getElementById("tensileStrength").value)*1000000;
 var bridgeLength = parseFloat(document.getElementById("length").value);//this can change.
 
@@ -101,10 +205,36 @@ function Beam(node1, node2, density, elasticModulus, width) {
         return this.node1;
     }
     
+    this.areaMomentOfInertia = function() {
+        //a square cross section. pretend mass is 1.
+        //rotate around center axis. Is it perpendicular or parallel to the plane?
+        //if perpendicular, use w^4/6
+        //if parallel, use w^4/12
+        return this.width*this.width*this.width*this.width/6.;
+    }
+    
+    this.compressionStrength = function() {
+        //calculate compression strength dynamically
+        //var compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
+        //F = pi^2*Modulus Elasticity*Area Moment of Inertia/(K*Length)
+        //K=.5 when both sides fixed. K=1 when sides pinned. Assume sides fixed, because a bridge is glued together like that.
+        //see wikipedia buckling article.
+        var numerator = Math.PI*Math.PI*this.elasticModulus*this.areaMomentOfInertia();
+        var denominator = .5*this.restLength;
+        var currentCompressionStrength = numerator/denominator;
+        //console.log("strength:"+currentCompressionStrength+", numerator:"+numerator+", denominator:"+denominator);
+        //should it be negative?
+        //what units are these in? why is this number so low?
+        return -10000000*currentCompressionStrength;
+    }
+    
     this.breakAtNode = function(connectedNode) {
         var force = this.storedForce;
         var area = this.area();
-        if (connectedNode.beams.length>1&&((force/area < compressionStrength) || (force/area > tensileStrength))) {
+        
+        
+        if (connectedNode.beams.length>1&&((force/area < this.compressionStrength()) || (force/area > tensileStrength))) {
+            console.log("compression strength broken:"+this.compressionStrength());
             newBeams = [];
             for (nodeBeamI in connectedNode.beams) {
                 if (connectedNode.beams[nodeBeamI]!=this) {
@@ -144,6 +274,8 @@ function Node(x, y, fixedX, fixedY, weight) {
     this.beams = [];
     this.fixedX=fixedX;
     this.fixedY=fixedY;
+    if (!fixedX) fixedX=false;
+    if (!fixedY) fixedY=false;
     
     this.type="Node";
     
@@ -168,7 +300,7 @@ function Node(x, y, fixedX, fixedY, weight) {
     this.increaseWeight = function(timestep) {
         if (this.weight) {
             this.effectiveWeight+=timestep*this.deltaWeight;
-            console.log("new weight:"+this.effectiveWeight);
+            //console.log("new weight:"+this.effectiveWeight);
             if (this.effectiveWeight>this.weight) this.effectiveWeight=this.weight;
         }
     }
@@ -317,6 +449,9 @@ function Bridge(nodes, beams) {
             var node = this.nodes[nodeI];
             node.moveForTime(timestep);
         }
+    }
+    //breaking shouldn't happen every calculation.
+    this.breakIfBroken = function() {
         for (beamI in this.beams) {
             var beam = this.beams[beamI];
             beam.breakIfBroken();
@@ -880,7 +1015,7 @@ function reset () {
         //lists of indices in userNodes (or a copy of user nodes)
         userBeams=[];
     }
-    compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
+    //compressionStrength = parseFloat(document.getElementById("compressionStrength").value)*-1000000;
     tensileStrength = parseFloat(document.getElementById("tensileStrength").value)*1000000;
     bridgeBroke=false;
     paused=true;
@@ -1056,6 +1191,7 @@ function Draw() {
             bridge.moveForTime(tForEachCalculation);
         }
         bridge.increaseWeight(dt);
+        bridge.breakIfBroken();
     }
     //console.log(bridge.averageNodeForce());
     //console.log(bridge.nodes[3].netForce());
@@ -1091,7 +1227,7 @@ function analyze() {
         var force = beam.force();
         var width = beam.width;
         var breakingPoint = tensileStrength*width*width;
-        if (force<0) breakingPoint = compressionStrength*width*width;
+        if (force<0) breakingPoint = beam.compressionStrength()*width*width;
         var efficiency = force/breakingPoint;
         maxEfficiency = Math.max(efficiency, maxEfficiency);
         insideTableHTML+= "<tr><td>"+beami+"</td><td>"+width+"</td><td>"+beam.length()+"</td><td>"+force+"</td><td>"+breakingPoint+"</td><td>"+efficiency+"</td></tr>";
@@ -1100,7 +1236,7 @@ function analyze() {
     var maxForce = weightOnBridge/maxEfficiency;
     //if it can support more weight distributed over more area with less mass, it's more efficient
     //multiply by bridgeLength?
-    var overallEfficiency = maxForce/totalMass;
+    var overallEfficiency = maxForce/totalMass/GRAVITY;
     var warning="";
     if (maxEfficiency<=0) {
         maxForce="unknown";
@@ -1108,7 +1244,7 @@ function analyze() {
         warning="<p>Run Simulation and try again.</p>";
     }
     var analysisHTML = document.getElementById("analysisGraphics").innerHTML;
-    var html = "<html><head><title>Bridge Analysis</title>"+analysisHTML+"</head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" N/kg</p>"+warning+"<canvas id='analysisCanvas' width='600px' height='200px'></canvas></body></html>";
+    var html = "<html><head><title>Bridge Analysis</title>"+analysisHTML+"</head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" kg/kg</p>"+warning+"<canvas id='analysisCanvas' width='600px' height='200px'></canvas></body></html>";
     
     var newWindow = window.open("about:blank", "_new");
     newWindow.document.bridgeBeams = [];
