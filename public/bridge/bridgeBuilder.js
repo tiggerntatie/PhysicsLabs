@@ -222,12 +222,12 @@ function Beam(node1, node2, density, elasticModulus, width) {
         //see wikipedia buckling article.
         var numerator = Math.PI*Math.PI*this.elasticModulus*this.areaMomentOfInertia();
         var denominator = .5*this.restLength;
-        var currentCompressionStrength = numerator/denominator;
+        var currentCompressionStrength = numerator/denominator/denominator;
         //console.log("strength:"+currentCompressionStrength+", numerator:"+numerator+", denominator:"+denominator);
         //should it be negative?
         //what units are these in? why is this number so low?
         //if fixed it, kinda, so instead of a factor of ten million there's a factor of one hundred
-        return -100*currentCompressionStrength;
+        return -1*currentCompressionStrength;
     }
     
     this.breakAtNode = function(connectedNode) {
