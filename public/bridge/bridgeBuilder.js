@@ -296,6 +296,7 @@ function Node(x, y, fixedX, fixedY, weight) {
     } else {//if it's undefined, set it to 0
         this.weight = 0;
     }
+    this.deltaWeight=function() {return this.weight};
     this.setWeight = function(newWeight) {
         this.weight=newWeight;
         this.deltaWeight = function() {return 1.*this.weight/TIME_TO_FULL_WEIGHT();}
