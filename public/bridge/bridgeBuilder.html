@@ -23,8 +23,8 @@
         Length: <input type="text" id="length" value="0.30" /> m<br />
         Weight: <input type="text" id="weight" value="10" /> N<br />
         <p hidden>Total NRG: <span id="NRG">0</span> J<br /></p>
-        Grid: <input type="checkbox" id="grid" onclick="gridClicked(this);" /><br />
-        Add beams: <input type="checkbox" onclick="changeMode(this);" checked /><br />
+        Grid: <input type="checkbox" id="grid" onclick="gridClicked(this);" /> Add beams: <input type="checkbox" onclick="changeMode(this);" checked /><br />
+        Time to full weight:<input type="range" min=".01" max=".5" step=".01" value=".3" onchange="updateSlider(this.value)" /><br />
         <select id="openSelect" onchange="openBridge(this);">
             <option>Open Bridge</option>
         </select>

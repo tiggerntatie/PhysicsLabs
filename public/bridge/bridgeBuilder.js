@@ -260,8 +260,11 @@ function Beam(node1, node2, density, elasticModulus, width) {
     }
 }
 
-var TIME_TO_FULL_WEIGHT = .3;//take some amount of (simulated) seconds to get up to full weight
+var TIME_TO_FULL_WEIGHT = function() {return .3;};//take some amount of (simulated) seconds to get up to full weight
 
+function updateSlider(value) {
+    TIME_TO_FULL_WEIGHT=function() {return value;};
+}
 var SMALL_ACCEL = 1e-3;
 
 function Node(x, y, fixedX, fixedY, weight) {
@@ -295,13 +298,13 @@ function Node(x, y, fixedX, fixedY, weight) {
     }
     this.setWeight = function(newWeight) {
         this.weight=newWeight;
-        this.deltaWeight = 1.*this.weight/TIME_TO_FULL_WEIGHT;
+        this.deltaWeight = function() {return 1.*this.weight/TIME_TO_FULL_WEIGHT();}
     }
     //don't put all the weight on at once.
     this.effectiveWeight = 0;
     this.increaseWeight = function(timestep) {
         if (this.weight) {
-            this.effectiveWeight+=timestep*this.deltaWeight;
+            this.effectiveWeight+=timestep*this.deltaWeight();
             //console.log("new weight:"+this.effectiveWeight);
             if (this.effectiveWeight>this.weight) this.effectiveWeight=this.weight;
         }
@@ -1221,7 +1224,7 @@ window.onresize = function(event) {
 function analyze() {
     //create new webpage
     //use non-breaking spaces to keep it all in one line
-    var insideTableHTML = "<tr><td>Beam&nbsp;#</td><td>Width&nbsp;(m)</td><td>Length&nbsp;(m)</td><td>Force&nbsp;(N)</td><td>Breaking&nbsp;Point&nbsp;(N)</td><td>Capacity&nbsp;(N/N)</td></tr>";
+    var insideTableHTML = "<tr><td>Beam&nbsp;#</td><td>Width&nbsp;(m)</td><td>Length&nbsp;(m)</td><td>Force&nbsp;(N)</td><td>Breaking&nbsp;Point&nbsp;(N)</td></tr>";
     var maxEfficiency = 0;
     var totalMass = 0;
     for (var beami in bridge.beams) {
@@ -1232,7 +1235,7 @@ function analyze() {
         if (force<0) breakingPoint = beam.compressionMaxForce();
         var efficiency = force/breakingPoint;
         maxEfficiency = Math.max(efficiency, maxEfficiency);
-        insideTableHTML+= "<tr><td>"+beami+"</td><td>"+width+"</td><td>"+beam.length()+"</td><td>"+force+"</td><td>"+breakingPoint+"</td><td>"+efficiency+"</td></tr>";
+        insideTableHTML+= "<tr><td class='beami'>"+beami+"</td><td>"+width+"</td><td>"+beam.length().toPrecision(5)+"</td><td>"+force+"</td><td>"+breakingPoint.toPrecision(5)+"</td></tr>";
         totalMass+=beam.mass;
     }
     var maxForce = weightOnBridge/maxEfficiency;
@@ -1246,7 +1249,7 @@ function analyze() {
         warning="<p>Run Simulation and try again.</p>";
     }
     var analysisHTML = document.getElementById("analysisGraphics").innerHTML;
-    var html = "<html><head><title>Bridge Analysis</title>"+analysisHTML+"</head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" kg/kg</p>"+warning+"<canvas id='analysisCanvas' width='600px' height='200px'></canvas></body></html>";
+    var html = "<html><head><style>.beami{color:#00F}</style><title>Bridge Analysis</title>"+analysisHTML+"</head><body><table border='1' cellpadding='5' cellspacing='0' width='200px' style='border-collapse:collapse;'>"+insideTableHTML+"</table><p>Estimated maximum force: "+maxForce+" N</p><p>Total Mass: "+totalMass+" kg</p><p>Overall Bridge Efficiency: "+overallEfficiency+" kg/kg</p>"+warning+"<canvas id='analysisCanvas' width='600px' height='200px'></canvas></body></html>";
     
     var newWindow = window.open("about:blank", "_new");
     newWindow.document.bridgeBeams = [];
