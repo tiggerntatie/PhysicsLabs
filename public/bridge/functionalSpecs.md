@@ -5,7 +5,8 @@
 ###Bridge display
 * Nodes (beam connection points) are displayed as circles
     * Nodes are black when stationary
-    * Nodes are red when moving with a velocity greater than a certain constant
+    * Nodes are red when moving with a acceleration greater than a certain constant
+    * Weight is added to the center node slowly. If the weight is not completely applied, node is red.
 * Beams are displayed as gray lines connecting nodes
     * Beam width ( sqrt(cross section area) ) is represented proportionally by line width
     * Above each beam is a number expressing the force exerted by the beam

@@ -240,6 +240,7 @@ function Start() {
 //resets all graphics and simulation
 function reset() {
     resetShapes();
+    resetGrid();
     document.getElementById("start").value = " Start ";
     paused=true;
     elapsedTime=0;

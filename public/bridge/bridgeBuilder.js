@@ -840,8 +840,10 @@ function objectAtCoord(coordinate) {
 }
 
 var isDragging = false;
+var isMovingNode=false;
 var startingCoord;
-var selectedObject;
+var selectedObject;//this persists when the user releases the mouse
+var objectDraggingFrom;//when dragging to create a beam,
 var startingNode;
 var mouseIsDown = false;
 var movingCoord;
@@ -849,18 +851,29 @@ var movingObject;//object that the mouse is currently over
 
 var draggingStartCoord;
 
+function startMovingNode() {
+    isMovingNode=true;
+}
+
+function endMovingNode() {
+    isMovingNode=false;
+}
+
 function startDragging() {
     isDragging=true;
     if (addBeams&&!started) {
-        if (!selectedObject) {
+        if (!objectDraggingFrom) {
             startingNode=new Node(startingCoord[0],startingCoord[1]);
+            //create a new node
             userNodes.push(startingNode);
-        } else if (selectedObject.type=="Beam") {
+        } else if (objectDraggingFrom.type=="Beam") {
+            //create a new node in the middle of the beam
             startingNode=new Node(startingCoord[0],startingCoord[1]);
-            insertNodeIntoBeam(startingNode, selectedObject);
+            insertNodeIntoBeam(startingNode, objectDraggingFrom);
             resetBridge();
         } else {
-            startingNode=selectedObject;
+            //it's a node!
+            startingNode=objectDraggingFrom;
         }
     }
 }
@@ -903,8 +916,7 @@ function mouseDown(event,obj) {
     if (addBeams&&!started) {
         var objcoord = objectAtCoord(coord(event, obj));
         startingCoord=objcoord[1];
-        selectedObject=objcoord[0];
-        console.log(selectedObject);
+        objectDraggingFrom=objcoord[0];
         mouseIsDown=true;
         console.log(startingCoord);
         movingCoord=startingCoord;
@@ -919,16 +931,31 @@ var MIN_DRAG_DIST = MAX_CLICK_DIST;//in pixels
 function mouseMoved(event,obj) {
     if (mouseIsDown) {
         if (addBeams&&!started) {
-            var objcoord = objectAtCoord(coord(event,obj));
-            movingCoord = objcoord[1];
-            movingObject=objcoord[0];
-            var mousePt = new Point(movingCoord[0], movingCoord[1]);
-            var startPt = new Point(startingCoord[0], startingCoord[1]);
-            if (!isDragging && mousePt.distance(startPt)>MIN_DRAG_DIST/slopeX) {
-                startDragging();
-                selectedObject=undefined;
+            //drag a beam to the new position
+            if (isMovingNode) {
+                var thePlace = coord(event, obj);
+                selectedObject.x=thePlace[0];
+                selectedObject.y=thePlace[1];
+                resetBridge();
+            } else {
+                var objcoord = objectAtCoord(coord(event,obj));
+                movingCoord = objcoord[1];
+                movingObject=objcoord[0];
+                var mousePt = new Point(movingCoord[0], movingCoord[1]);
+                var startPt = new Point(startingCoord[0], startingCoord[1]);
+                if (!isDragging && mousePt.distance(startPt)>MIN_DRAG_DIST/slopeX) {
+                    //if not already dragging and have moved a lot
+                    //maybe move node instead!
+                    if (selectedObject && selectedObject.type=="Node") {
+                        startMovingNode();
+                    } else {
+                        startDragging();
+                        objectDraggingFrom=undefined;
+                    }
+                }
             }
         } else {
+            //move like you mean it!
             var newCoord = screenCoord(event,obj);
             interceptX-=draggingStartCoord[0]-newCoord[0];
             interceptY-=draggingStartCoord[1]-newCoord[1];
@@ -946,6 +973,12 @@ function mouseUp(event,obj) {
     mouseIsDown=false;
     if (isDragging) {
         endDragging();
+    } else if (isMovingNode) {
+        endMovingNode();
+        resetBridge();
+    } else {
+        selectedObject=objectDraggingFrom;
+        objectDraggingFrom=undefined;
     }
 }
 
@@ -1141,7 +1174,7 @@ function Draw() {
     }
     
     //draw beam currently being drawn by user
-    if (mouseIsDown&&addBeams&&!started) {
+    if (mouseIsDown&&addBeams&&!started&&!isMovingNode) {
         gContext.beginPath();
         gContext.strokeStyle="gray";
         gContext.lineWidth=Math.min(parseFloat(document.getElementById("width").value)*WIDTH_FACTOR,MAX_LINE_WIDTH);
