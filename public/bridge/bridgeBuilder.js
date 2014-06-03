@@ -234,7 +234,6 @@ function Beam(node1, node2, density, elasticModulus, width) {
         var force = this.storedForce;
         var area = this.area();
         
-        
         if (connectedNode.beams.length>1&&((force < this.compressionMaxForce()) || (force/area > tensileStrength))) {
             console.log("compression force broken:"+this.compressionMaxForce());
             newBeams = [];
@@ -244,10 +243,10 @@ function Beam(node1, node2, density, elasticModulus, width) {
                 }
             }
             connectedNode.beams=newBeams;
-            connectedNode.fixedY=connectedNode.fixedX;
+            //connectedNode.fixedY=connectedNode.fixedX;
             if (connectedNode==this.node1) {this.node1 = this.node1.copy(); connectedNode=this.node1;}
             else {this.node2 = this.node2.copy(); connectedNode=this.node2;}
-            connectedNode.fixedY=false;
+            //connectedNode.fixedY=false;
             bridge.nodes.push(connectedNode);
             connectedNode.beams.push(this);
             bridgeBroke=true;
@@ -920,6 +919,7 @@ function mouseDown(event,obj) {
         mouseIsDown=true;
         console.log(startingCoord);
         movingCoord=startingCoord;
+        if (selectedObject!=objectDraggingFrom) selectedObject=undefined;
     } else {
         mouseIsDown=true;
         draggingStartCoord=screenCoord(event,obj);
@@ -946,7 +946,9 @@ function mouseMoved(event,obj) {
                 if (!isDragging && mousePt.distance(startPt)>MIN_DRAG_DIST/slopeX) {
                     //if not already dragging and have moved a lot
                     //maybe move node instead!
-                    if (selectedObject && selectedObject.type=="Node") {
+                    console.log(movingObject);
+                    console.log(selectedObject);
+                    if (selectedObject && selectedObject.type=="Node"/* && selectedObject==movingObject*/) {
                         startMovingNode();
                     } else {
                         startDragging();
@@ -983,7 +985,7 @@ function mouseUp(event,obj) {
 }
 
 window.onkeydown = function(event) {
-    if ((event.keyCode==46||event.keyCode==68) && selectedObject) {
+    if ((event.keyCode==46||event.keyCode==68||event.keyCode==8) && selectedObject) {
         //delete key
         if (selectedObject.type=="Beam") {
             deleteBeam(selectedObject);
@@ -993,8 +995,11 @@ window.onkeydown = function(event) {
             resetBridge();
         }
         selectedObject=undefined;
+        event.preventDefault();//citation: Ben Chaimberg
+        //youpp3
     }
     console.log("keydown:"+event.keyCode);
+    //event.preventDefault();
 }
 
 document.onkeypress = function(event) {
@@ -1008,8 +1013,11 @@ document.onkeypress = function(event) {
             resetBridge();
         }
         selectedObject=undefined;
+        event.preventDefault();
     }
     console.log("keypress:"+event.keyCode);
+    //event.preventDefault();
+
 }
 
 //prevent scrolling when on top. scrolling is hijacked to zoom
@@ -1082,7 +1090,6 @@ function resetBridge() {
         if (nodes[i].y==0 && nodes[i].x==0) {
             nodes[i].setWeight(weight);
             weightOnBridge=weight;
-            console.log(nodes[i]);
         }
     }
     
