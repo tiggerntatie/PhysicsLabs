@@ -226,7 +226,6 @@ function Beam(node1, node2, density, elasticModulus, width) {
         //console.log("strength:"+currentCompressionStrength+", numerator:"+numerator+", denominator:"+denominator);
         //should it be negative?
         //what units are these in? why is this number so low?
-        //if fixed it, kinda, so instead of a factor of ten million there's a factor of one hundred
         return -1*currentCompressionStrength;
     }
     
@@ -503,6 +502,7 @@ function deleteNode(node) {
             var secondI = parseInt(usrBeam[1]);
             if (firstI>deletedIndex) usrBeam[0]=firstI-1;
             if (secondI>deletedIndex) usrBeam[1]=secondI-1;
+            console.log(usrBeam);
             newUserBeams.push(usrBeam);
         }
     }
@@ -510,20 +510,29 @@ function deleteNode(node) {
     userNodes=newUserNodes;
 }
 
+//beam is already part of bridge. node is the last node in userNodes
 function insertNodeIntoBeam(node, beam) {
-    var newNodeIndex = userNodes.length;
-    userNodes.push(node);
+    var newNodeIndex = userNodes.length-1;
+    //userNodes.push(node);
     var node1 = beam.node1;
     var node2 = beam.node2;
     deleteBeam(beam);
     var node1i;
     var node2i;
     for (i in bridge.nodes) {
-        if (bridge.nodes[i]==node1) node1i=i;
-        else if (bridge.nodes[i]==node2) node2i=i;
+        var checkingNode = bridge.nodes[i];
+        if (checkingNode==node1) node1i=parseInt(i);
+        else if (checkingNode==node2) node2i=parseInt(i);
     }
     userBeams.push([newNodeIndex, node1i, beam.width]);
     userBeams.push([newNodeIndex, node2i, beam.width]);
+    if (node1i==undefined) {
+        console.log("node1i undefined");
+    }
+    if (node2i==undefined) {
+        console.log("node2i undefined");
+    }
+    console.log(userBeams);
 }
 
 function deleteBeam(beam) {
@@ -543,6 +552,7 @@ function deleteBeam(beam) {
         var usrBeamIsFirst = parseInt(usrBeam[0])==node1i && parseInt(usrBeam[1])==node2i;
         var usrBeamIsSecond = parseInt(usrBeam[1])==node1i && parseInt(usrBeam[0])==node2i;
         if (!usrBeamIsFirst&&!usrBeamIsSecond) {
+            console.log(usrBeam);
             newUserBeams.push(usrBeam);
         }
     }
@@ -575,7 +585,7 @@ function screenCoord(event,obj) {
 //this class represents a point in model coordinates. it responds to intersection methods. Copied from collision lab.
 
 //these constants define how steep a line must be for it to be vertical and how close the intersection must be to the line ends.
-var VERTICAL_CUTOFF=.01;
+var VERTICAL_CUTOFF=.001;
 var INTERSECTION_ERROR = 1e-5;
 
 //a point has an x and a y coordinate. It is mutable.
@@ -862,12 +872,14 @@ function startDragging() {
     isDragging=true;
     if (addBeams&&!started) {
         if (!objectDraggingFrom) {
+            //don't start at any object. create a new node and go from there
             startingNode=new Node(startingCoord[0],startingCoord[1]);
             //create a new node
             userNodes.push(startingNode);
         } else if (objectDraggingFrom.type=="Beam") {
             //create a new node in the middle of the beam
             startingNode=new Node(startingCoord[0],startingCoord[1]);
+            userNodes.push(startingNode);
             insertNodeIntoBeam(startingNode, objectDraggingFrom);
             resetBridge();
         } else {
@@ -898,6 +910,7 @@ function endDragging() {
             userNodes.push(endNode);
         } else if (movingObject.type=="Beam") {
             //insert the end node into the beam
+            userNodes.push(endNode);
             insertNodeIntoBeam(endNode, movingObject);
         }
         
@@ -905,9 +918,57 @@ function endDragging() {
         for (i in userNodes) {
             if (userNodes[i]==startingNode) startNodeIndex=i;
         }
+        //create a new beam from the start to the end
         userBeams.push([startNodeIndex, endNodeIndex, parseFloat(document.getElementById('width').value)]);
+        console.log(userBeams);
         
         resetBridge();
+        
+        beamMightIntersect(bridge.beams[parseInt(bridge.beams.length)-1]);//assume the beam has been added to the end of the bridge. this is probably true
+        
+        
+        
+        resetBridge();
+    }
+}
+
+function beamMightIntersect(newBeam) {
+    var beam2Point1 = new Point(newBeam.node1.x, newBeam.node1.y);
+    var beam2Point2 = new Point(newBeam.node2.x, newBeam.node2.y);
+    
+    //now check if the new beam intersects an old beam (or more than one)
+    for (beami in bridge.beams) {
+        
+        var beam = bridge.beams[beami]
+        //beams must not be connected at either endpoint
+        if (beam.node1!=newBeam.node1 && beam.node1!=newBeam.node2 && beam.node2!=newBeam.node1 && beam.node2!=newBeam.node2) {
+            console.log('checking beam');
+            
+            var beam1Point1 = new Point(beam.node1.x, beam.node1.y);
+            var beam1Point2 = new Point(beam.node2.x, beam.node2.y);
+            var intersection = beam2Point1.intersectSegments(beam2Point2, beam1Point1, beam1Point2);
+            if (intersection) {
+                //they intersect. therefore should add a node
+                var newNode = new Node(intersection.x, intersection.y);
+                userNodes.push(newNode);
+                insertNodeIntoBeam(newNode, beam);
+                insertNodeIntoBeam(newNode, newBeam);
+                resetBridge();
+                //the last two beams might still intersect some things
+                //in recursion, bridge beams might change, so first find which are the last two beams
+                var firstBeam = bridge.beams[parseInt(bridge.beams.length)-1];
+                var secondBeamUsr = userBeams[parseInt(bridge.beams.length)-2];
+                beamMightIntersect(firstBeam);
+                resetBridge();
+                //now find where secondBeamUsr has gotten to
+                var secondI;
+                for (usrbeami in userBeams) {
+                    if (userBeams[usrbeami]==secondBeamUsr) secondI=usrbeami;
+                }
+                beamMightIntersect(bridge.beams[secondI]);
+                return;
+            }
+        }
     }
 }
 
