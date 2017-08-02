@@ -1,9 +1,9 @@
-#Deployment Instructions
+# Deployment Instructions
 
-##Physics Labs
+## Physics Labs
 Load on web server. Open index.html in physics labs folder.
 
-##Bridge Builder
+## Bridge Builder
 * Load on web server like hhscp.org/u/leed/bridge/bridgeBuilder.html
 * Open the html file in a computer browser (not mobile)
 * To use, draw beams by dragging with the mouse
